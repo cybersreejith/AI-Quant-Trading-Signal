@@ -1,0 +1,91 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# 虚拟环境
+venv/
+env/
+ENV/
+.env
+.venv
+env.bak/
+venv.bak/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+
+# 日志文件
+logs/
+*.log
+log/
+
+# 数据文件
+data/
+*.csv
+*.xlsx
+*.xls
+*.json
+*.pkl
+*.h5
+
+# 报告和输出
+reports/
+output/
+*.pdf
+*.png
+*.jpg
+*.jpeg
+
+# 环境变量和敏感信息
+.env
+.env.local
+.env.*.local
+config.ini
+secrets.json
+credentials.json
+*.key
+*.pem
+*.cert
+
+# 缓存文件
+.cache/
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.nox/
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+.pytest_cache/
+cover/
+
+# 系统文件
+.DS_Store
+Thumbs.db 
