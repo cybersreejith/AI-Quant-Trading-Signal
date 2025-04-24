@@ -57,6 +57,7 @@ output/
 *.png
 *.jpg
 *.jpeg
+trading_report_*.txt
 
 # 环境变量和敏感信息
 .env
