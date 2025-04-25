@@ -59,48 +59,43 @@ def input_asset_code(asset_type: str) -> str:
             return full_code
         print("无效的资产代码，请重试")
 
-def screen_assets(asset_type: str) -> List[str]:
+def select_asset_type_menu() -> Optional[str]:
     """
-    显示资产列表并让用户选择
+    显示资产类型菜单并获取用户选择
     
-    Args:
-        asset_type: 资产类型代码
-        
     Returns:
-        选中的资产代码列表
+        用户选择的资产类型代码，如果选择退出则返回None
     """
-    try:
-        if asset_type not in POPULAR_ASSETS:
-            print(f"无效的资产类型: {asset_type}")
-            return []
+    print("\n=== AI量化交易分析系统 ===")
+    print("1. 全球股票")
+    print("2. ETF")
+    print("3. 外汇")
+    print("4. 加密货币")
+    print("5. 退出")
+    
+    while True:
+        choice = input("\n请选择资产类型 (1-5): ")
+        
+        if choice == '5':
+            return None
             
-        assets = POPULAR_ASSETS[asset_type]['assets']
-        print(f"\n=== {POPULAR_ASSETS[asset_type]['name']} 列表 ===")
-        for i, asset in enumerate(assets, 1):
-            print(f"{i}. {asset}")
+        if choice in ['1', '2', '3', '4']:
+            return choice
             
-        while True:
-            choice = input("\n请选择资产 (输入数字，多个用逗号分隔，输入'all'选择全部，输入'q'退出): ")
-            
-            if choice.lower() == 'q':
-                return []
-                
-            if choice.lower() == 'all':
-                return assets
-                
-            try:
-                indices = [int(x.strip()) for x in choice.split(',')]
-                selected = [assets[i-1] for i in indices if 1 <= i <= len(assets)]
-                if selected:
-                    return selected
-                else:
-                    print("无效的选择，请重试")
-            except ValueError:
-                print("输入格式错误，请重试")
-                
-    except Exception as e:
-        logging.error(f"选择资产时出错: {str(e)}")
-        return []
+        print("无效的选择，请重试")
+
+def input_asset_symbol() -> Optional[str]:
+    """
+    获取用户输入的资产代码
+    
+    Returns:
+        用户输入的资产代码，如果输入为空则返回None
+    """
+    symbol = input("\n请输入要分析的资产代码: ").strip()
+    if not symbol:
+        print("未输入资产代码")
+        return None
+    return symbol
 
 def process_trading_signals(
     trading_pairs: List[str],
@@ -208,96 +203,25 @@ def get_historical_data(symbol: str, start_date: str = None, end_date: str = Non
             logging.warning(f"未找到 {symbol} 的历史数据")
             return None
             
-        # 重命名列
-        df.columns = ['Open', 'High', 'Low', 'Close', 'Volume', 'Dividends', 'Stock Splits']
+        # 重命名列，只重命名存在的列
+        column_mapping = {
+            'Open': 'Open',
+            'High': 'High',
+            'Low': 'Low',
+            'Close': 'Close',
+            'Volume': 'Volume',
+            'Dividends': 'Dividends',
+            'Stock Splits': 'Stock_Splits'
+        }
+        
+        # 只重命名存在的列
+        existing_columns = [col for col in column_mapping.keys() if col in df.columns]
+        df = df.rename(columns={col: column_mapping[col] for col in existing_columns})
         
         return df
         
     except Exception as e:
         logging.error(f"获取 {symbol} 的历史数据时出错: {str(e)}")
-        return None
-
-def calculate_technical_indicators_extended(df: pd.DataFrame) -> Optional[pd.DataFrame]:
-    """
-    计算扩展的技术指标
-    
-    Args:
-        df: 包含OHLCV数据的DataFrame
-        
-    Returns:
-        添加了技术指标的DataFrame，如果计算失败则返回None
-    """
-    try:
-        # 确保数据按时间排序
-        df = df.sort_index()
-        
-        # 计算移动平均线
-        df['SMA_5'] = talib.SMA(df['Close'], timeperiod=5)
-        df['SMA_10'] = talib.SMA(df['Close'], timeperiod=10)
-        df['SMA_20'] = talib.SMA(df['Close'], timeperiod=20)
-        df['SMA_50'] = talib.SMA(df['Close'], timeperiod=50)
-        df['SMA_200'] = talib.SMA(df['Close'], timeperiod=200)
-        
-        # 计算指数移动平均线
-        df['EMA_5'] = talib.EMA(df['Close'], timeperiod=5)
-        df['EMA_10'] = talib.EMA(df['Close'], timeperiod=10)
-        df['EMA_20'] = talib.EMA(df['Close'], timeperiod=20)
-        df['EMA_50'] = talib.EMA(df['Close'], timeperiod=50)
-        
-        # 计算MACD
-        macd, macd_signal, macd_hist = talib.MACD(df['Close'])
-        df['MACD'] = macd
-        df['MACD_Signal'] = macd_signal
-        df['MACD_Hist'] = macd_hist
-        
-        # 计算RSI
-        df['RSI'] = talib.RSI(df['Close'], timeperiod=14)
-        
-        # 计算布林带
-        upper, middle, lower = talib.BBANDS(df['Close'], timeperiod=20)
-        df['BB_Upper'] = upper
-        df['BB_Middle'] = middle
-        df['BB_Lower'] = lower
-        
-        # 计算ATR
-        df['ATR'] = talib.ATR(df['High'], df['Low'], df['Close'], timeperiod=14)
-        
-        # 计算成交量指标
-        df['OBV'] = talib.OBV(df['Close'], df['Volume'])
-        
-        # 计算趋势指标
-        df['ADX'] = talib.ADX(df['High'], df['Low'], df['Close'], timeperiod=14)
-        
-        # 计算随机指标
-        slowk, slowd = talib.STOCH(df['High'], df['Low'], df['Close'])
-        df['Stoch_K'] = slowk
-        df['Stoch_D'] = slowd
-        
-        # 计算价格动量
-        df['ROC'] = talib.ROC(df['Close'], timeperiod=10)
-        
-        # 计算波动率
-        df['Volatility'] = df['Close'].pct_change().rolling(window=20).std() * np.sqrt(252)
-        
-        # 计算价格变化百分比
-        df['Price_Change'] = df['Close'].pct_change()
-        
-        # 计算成交量变化
-        df['Volume_Change'] = df['Volume'].pct_change()
-        
-        # 计算高低价范围
-        df['High_Low_Range'] = (df['High'] - df['Low']) / df['Close']
-        
-        # 计算收盘价相对位置
-        df['Close_Position'] = (df['Close'] - df['BB_Lower']) / (df['BB_Upper'] - df['BB_Lower'])
-        
-        # 删除包含NaN的行
-        df = df.dropna()
-        
-        return df
-        
-    except Exception as e:
-        logging.error(f"计算技术指标时出错: {str(e)}")
         return None
 
 def prepare_backtest_data(symbols: List[str], start_date: str = None, end_date: str = None) -> Dict[str, pd.DataFrame]:
@@ -322,7 +246,7 @@ def prepare_backtest_data(symbols: List[str], start_date: str = None, end_date: 
                 continue
                 
             # 计算技术指标
-            technical_data = calculate_technical_indicators_extended(historical_data)
+            technical_data = calculate_indicators(historical_data)
             if technical_data is None:
                 continue
                 
@@ -380,31 +304,6 @@ def process_assets_for_backtest(symbols: List[str], start_date: str = None, end_
         logging.error(f"处理资产数据时出错: {str(e)}")
         raise
 
-def select_asset_type_menu() -> Optional[str]:
-    """
-    显示资产类型菜单并获取用户选择
-    
-    Returns:
-        用户选择的资产类型代码，如果选择退出则返回None
-    """
-    print("\n=== AI量化交易分析系统 ===")
-    print("1. 全球股票")
-    print("2. ETF")
-    print("3. 外汇")
-    print("4. 加密货币")
-    print("5. 退出")
-    
-    while True:
-        choice = input("\n请选择资产类型 (1-5): ")
-        
-        if choice == '5':
-            return None
-            
-        if choice in ['1', '2', '3', '4']:
-            return choice
-            
-        print("无效的选择，请重试")
-
 def display_asset_reference_list(asset_type: str) -> None:
     """
     显示资产参考列表
@@ -415,19 +314,6 @@ def display_asset_reference_list(asset_type: str) -> None:
     print(f"\n=== {POPULAR_ASSETS[asset_type]['name']} 参考列表 ===")
     for i, asset in enumerate(POPULAR_ASSETS[asset_type]['assets'], 1):
         print(f"{i}. {asset}")
-
-def input_asset_symbol() -> Optional[str]:
-    """
-    获取用户输入的资产代码
-    
-    Returns:
-        用户输入的资产代码，如果输入为空则返回None
-    """
-    symbol = input("\n请输入要分析的资产代码: ").strip()
-    if not symbol:
-        print("未输入资产代码")
-        return None
-    return symbol
 
 def run_trading_analysis() -> None:
     """
@@ -461,7 +347,7 @@ def run_trading_analysis() -> None:
                 continue
                 
             # 计算技术指标
-            technical_data = calculate_technical_indicators_extended(historical_data)
+            technical_data = calculate_indicators(historical_data)
             if technical_data is None:
                 print("计算技术指标失败")
                 continue
