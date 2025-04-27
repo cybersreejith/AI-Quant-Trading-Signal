@@ -315,6 +315,17 @@ def display_asset_reference_list(asset_type: str) -> None:
     for i, asset in enumerate(POPULAR_ASSETS[asset_type]['assets'], 1):
         print(f"{i}. {asset}")
 
+def get_date_range() -> tuple[str, str]:
+    """
+    获取用户输入的日期范围
+    
+    Returns:
+        开始日期和结束日期的元组
+    """
+    start_date = input("请输入开始日期 (YYYY-MM-DD，直接回车使用默认值): ").strip()
+    end_date = input("请输入结束日期 (YYYY-MM-DD，直接回车使用默认值): ").strip()
+    return start_date, end_date
+
 def run_trading_analysis() -> None:
     """
     运行交易分析主程序
@@ -337,8 +348,7 @@ def run_trading_analysis() -> None:
             print(f"\n已选择资产: {symbol}")
             
             # 获取日期范围
-            start_date = input("请输入开始日期 (YYYY-MM-DD，直接回车使用默认值): ").strip()
-            end_date = input("请输入结束日期 (YYYY-MM-DD，直接回车使用默认值): ").strip()
+            start_date, end_date = get_date_range()
             
             # 获取历史数据
             historical_data = get_historical_data(symbol, start_date, end_date)
