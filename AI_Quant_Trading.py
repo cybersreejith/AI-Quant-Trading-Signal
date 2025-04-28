@@ -7,13 +7,9 @@ import logging
 from typing import List, Dict, Optional
 import os
 from utils.logger import setup_logger
-from utils.email import send_email
-from core.data import get_asset_data
 from core.indicators import calculate_indicators
 from core.strategy import TunableClassicTrendFollow
 from core.backtest import Backtest
-from analysis.sentiment import analyze_market_sentiment
-from analysis.report import ReportGenerator
 from config.settings import (
     START_DATE,
     END_DATE,
