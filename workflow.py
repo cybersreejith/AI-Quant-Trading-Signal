@@ -11,6 +11,9 @@ from AI_Quant_Trading import (
     get_historical_data
 )
 from core.indicators import calculate_indicators
+from core.sentiment_analysis import SentimentAgent
+from datetime import datetime, timedelta
+from core.report_generation import ReportAgent
 
 # 配置日志
 logging.basicConfig(level=logging.INFO)
@@ -44,6 +47,9 @@ class WorkflowState(TypedDict, total=False):
     # === 最终报告 ===
     final_report:      NotRequired[str]
 
+    # === 实时信号 ===
+    live_signal:       NotRequired[Dict[str, Any]]
+
 def create_workflow_graph() -> Graph:
     """创建工作流图"""
     # 创建工作流图
@@ -60,6 +66,7 @@ def create_workflow_graph() -> Graph:
     workflow.add_node("generate_trading_strategy", generate_trading_strategy_node)
     workflow.add_node("run_backtest", run_backtest_node)
     workflow.add_node("evaluate_backtest", evaluate_backtest_node)
+    workflow.add_node("generate_live_signal", generate_live_signal_node)
     workflow.add_node("analyze_market_sentiment", analyze_market_sentiment_node)
     workflow.add_node("generate_final_report", generate_final_report_node)
     
@@ -75,12 +82,13 @@ def create_workflow_graph() -> Graph:
     workflow.add_edge("run_backtest", "evaluate_backtest")
     workflow.add_conditional_edges(
         "evaluate_backtest",
-        lambda x: "generate_trading_strategy" if not x["backtest_evaluation"]["is_satisfactory"] else "analyze_market_sentiment",
+        lambda x: "generate_trading_strategy" if not x["backtest_evaluation"]["is_satisfactory"] else "generate_live_signal",
         {
             "generate_trading_strategy": "generate_trading_strategy",
-            "analyze_market_sentiment": "analyze_market_sentiment"
+            "generate_live_signal": "generate_live_signal"
         }
     )
+    workflow.add_edge("generate_live_signal", "analyze_market_sentiment")
     workflow.add_edge("analyze_market_sentiment", "generate_final_report")
     
     # 设置入口和出口
@@ -274,12 +282,88 @@ def evaluate_backtest_node(state: WorkflowState) -> WorkflowState:
         logger.error(f"评估回测结果时出错: {str(e)}")
         raise
 
+def generate_live_signal_node(state: WorkflowState) -> WorkflowState:
+    """生成实时交易信号节点"""
+    try:
+        logger.info("开始生成实时交易信号")
+        
+        # 检查必要数据
+        if not state.get('symbol') or not state.get('trading_strategy'):
+            logger.error("缺少必要数据：资产代码或交易策略")
+            raise ValueError("缺少必要数据：资产代码或交易策略")
+            
+        # 获取最新的历史数据
+        latest_data = get_historical_data(
+            symbol=state['symbol'],
+            start_date=(datetime.now() - timedelta(days=30)).strftime('%Y-%m-%d'),
+            end_date=datetime.now().strftime('%Y-%m-%d')
+        )
+        
+        if latest_data is None or latest_data.empty:
+            logger.error("获取最新数据失败")
+            raise ValueError("获取最新数据失败")
+            
+        # 计算技术指标
+        latest_data_with_indicators = calculate_indicators(latest_data)
+        
+        # 使用交易策略生成信号
+        signal = state['trading_strategy'].generate_signal(latest_data_with_indicators)
+        
+        # 更新工作流状态
+        state['live_signal'] = {
+            "signal": signal,
+            "timestamp": datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+            "price": latest_data_with_indicators['Close'].iloc[-1],
+            "indicators": {
+                "RSI": latest_data_with_indicators['RSI'].iloc[-1],
+                "MACD": latest_data_with_indicators['MACD'].iloc[-1],
+                "BB_Upper": latest_data_with_indicators['BB_Upper'].iloc[-1],
+                "BB_Lower": latest_data_with_indicators['BB_Lower'].iloc[-1]
+            }
+        }
+        
+        logger.info(f"实时信号生成完成: {signal}")
+        return state
+        
+    except Exception as e:
+        logger.error(f"生成实时信号时出错: {str(e)}")
+        raise
+
 def analyze_market_sentiment_node(state: WorkflowState) -> WorkflowState:
     """分析市场情绪节点"""
     try:
-        # TODO: 实现市场情绪分析逻辑
-        logger.info("分析市场情绪")
+        logger.info("开始分析市场情绪")
+        
+        # 检查必要数据
+        if not state.get('symbol'):
+            logger.error("未设置资产代码")
+            raise ValueError("未设置资产代码")
+            
+        # 初始化情绪分析agent
+        sentiment_agent = SentimentAgent()
+        
+        # 分析市场情绪
+        sentiment_result = sentiment_agent.analyze_market_sentiment(state['symbol'])
+        
+        # 检查分析结果
+        if "error" in sentiment_result:
+            logger.error(f"市场情绪分析失败: {sentiment_result['error']}")
+            raise ValueError(f"市场情绪分析失败: {sentiment_result['error']}")
+            
+        # 更新工作流状态
+        state['sentiment_analysis'] = {
+            "overall_sentiment": sentiment_result["overall_sentiment"],
+            "sentiment_score": sentiment_result["sentiment_score"],
+            "key_points": sentiment_result["key_points"],
+            "confidence": sentiment_result["confidence"],
+            "news_summary": sentiment_result["news_summary"]
+        }
+        
+        # 记录分析结果
+        logger.info(f"市场情绪分析完成: {sentiment_result['overall_sentiment']} (得分: {sentiment_result['sentiment_score']})")
+        
         return state
+        
     except Exception as e:
         logger.error(f"分析市场情绪时出错: {str(e)}")
         raise
@@ -287,9 +371,39 @@ def analyze_market_sentiment_node(state: WorkflowState) -> WorkflowState:
 def generate_final_report_node(state: WorkflowState) -> WorkflowState:
     """生成最终报告节点"""
     try:
-        # TODO: 实现最终报告生成逻辑
-        logger.info("生成最终报告")
+        logger.info("开始生成最终报告")
+        
+        # 检查必要数据
+        required_data = ["backtest_results", "live_signal", "sentiment_analysis"]
+        missing_data = [field for field in required_data if field not in state]
+        
+        if missing_data:
+            logger.error(f"缺少必要数据: {', '.join(missing_data)}")
+            raise ValueError(f"缺少必要数据: {', '.join(missing_data)}")
+            
+        # 初始化报告生成agent
+        report_agent = ReportAgent()
+        
+        # 准备分析数据
+        analysis_data = {
+            "backtest_results": state["backtest_results"],
+            "live_signal": state["live_signal"],
+            "sentiment_analysis": state["sentiment_analysis"]
+        }
+        
+        # 生成报告
+        report = report_agent.generate_report(analysis_data)
+        
+        if "error" in report:
+            logger.error(f"生成报告失败: {report['error']}")
+            raise ValueError(f"生成报告失败: {report['error']}")
+            
+        # 更新工作流状态
+        state["final_report"] = report
+        
+        logger.info("最终报告生成完成")
         return state
+        
     except Exception as e:
         logger.error(f"生成最终报告时出错: {str(e)}")
         raise
@@ -312,7 +426,8 @@ if __name__ == "__main__":
         backtest_results=None,
         backtest_evaluation={"is_satisfactory": False},
         sentiment_analysis=None,
-        final_report=""
+        final_report="",
+        live_signal=None
     )
     
     # 运行工作流
