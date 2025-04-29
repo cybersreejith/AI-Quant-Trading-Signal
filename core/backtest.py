@@ -1,240 +1,271 @@
+"""
+回测模块
+使用backtrader实现回测功能
+"""
+
+import backtrader as bt
 import pandas as pd
 import numpy as np
-from typing import Dict, List, Tuple
+from typing import List, Dict, Any
+from datetime import datetime
 from utils.logger import setup_logger
 from config.settings import (
     INITIAL_CAPITAL,
-    POSITION_SIZE,
-    COMMISSION_RATE,
-    SLIPPAGE
+    COMMISSION_RATE
 )
+from config.indicator_meta import INDICATOR_META
 
 logger = setup_logger(__name__)
 
-class Backtest:
-    """
-    回测系统
-    """
-    def __init__(self, initial_capital: float = INITIAL_CAPITAL):
-        self.initial_capital = initial_capital
-        self.current_capital = initial_capital
-        self.positions = {}  # 当前持仓
-        self.trades = []  # 交易记录
-        self.equity_curve = []  # 权益曲线
+class StrategyBase(bt.Strategy):
+    """策略基类"""
+    params = (
+        ('printlog', False),
+    )
+
+    def log(self, txt, dt=None, doprint=False):
+        """日志记录"""
+        if self.params.printlog or doprint:
+            dt = dt or self.datas[0].datetime.date(0)
+            logger.info(f'{dt.isoformat()} {txt}')
+
+    def notify_order(self, order):
+        """订单状态通知"""
+        if order.status in [order.Submitted, order.Accepted]:
+            return
+
+        if order.status in [order.Completed]:
+            if order.isbuy():
+                self.log(f'买入执行, 价格: {order.executed.price:.2f}, 成本: {order.executed.value:.2f}, 佣金: {order.executed.comm:.2f}')
+            else:
+                self.log(f'卖出执行, 价格: {order.executed.price:.2f}, 成本: {order.executed.value:.2f}, 佣金: {order.executed.comm:.2f}')
+
+        elif order.status in [order.Canceled, order.Margin, order.Rejected]:
+            self.log('订单取消/保证金不足/拒绝')
+
+        self.order = None
+
+    def notify_trade(self, trade):
+        """交易通知"""
+        if not trade.isclosed:
+            return
+
+        self.log(f'交易利润, 毛利润: {trade.pnl:.2f}, 净利润: {trade.pnlcomm:.2f}')
+
+class MetaStrategy(StrategyBase):
+    """基于INDICATOR_META的通用策略类"""
+    
+    def __init__(self, strategy_config: Dict[str, Any]):
+        """
+        初始化策略
         
-    def run(self, data: pd.DataFrame, signals: List[Dict]) -> Dict:
+        Args:
+            strategy_config: 策略配置字典，包含name、indicators、params和rule
         """
-        运行回测
-        :param data: 历史数据
-        :param signals: 交易信号列表
-        :return: 回测结果
-        """
-        try:
-            for i in range(len(data)):
-                current_price = data.iloc[i]['CLOSE']
-                timestamp = data.index[i]
+        super().__init__()
+        self.strategy_config = strategy_config
+        self.indicators = {}
+        
+        # 初始化指标
+        for indicator in strategy_config['indicators']:
+            if indicator in INDICATOR_META:
+                meta = INDICATOR_META[indicator]
+                params = strategy_config['params'].get(indicator, {})
                 
-                # 更新持仓盈亏
-                self._update_positions(current_price, timestamp)
-                
-                # 处理交易信号
-                for signal in signals:
-                    if signal['timestamp'] == timestamp:
-                        self._process_signal(signal, current_price)
-                
-                # 记录权益
-                self.equity_curve.append({
-                    'timestamp': timestamp,
-                    'equity': self._calculate_total_equity(current_price)
-                })
-            
-            # 计算回测结果
-            results = self._calculate_results()
-            logger.info("回测完成")
-            return results
-            
-        except Exception as e:
-            logger.error(f"回测过程中出错: {str(e)}")
-            return None
-            
-    def _update_positions(self, current_price: float, timestamp: pd.Timestamp):
-        """
-        更新持仓盈亏
-        :param current_price: 当前价格
-        :param timestamp: 时间戳
-        """
-        for symbol, position in self.positions.items():
-            # 计算未实现盈亏
-            unrealized_pnl = position['size'] * (current_price - position['entry_price'])
-            
-            # 检查止损止盈
-            if position['direction'] > 0:  # 多头
-                if current_price <= position['stop_loss']:
-                    self._close_position(symbol, current_price, timestamp, 'stop_loss')
-                elif current_price >= position['take_profit']:
-                    self._close_position(symbol, current_price, timestamp, 'take_profit')
-            else:  # 空头
-                if current_price >= position['stop_loss']:
-                    self._close_position(symbol, current_price, timestamp, 'stop_loss')
-                elif current_price <= position['take_profit']:
-                    self._close_position(symbol, current_price, timestamp, 'take_profit')
-                    
-    def _process_signal(self, signal: Dict, current_price: float):
-        """
-        处理交易信号
-        :param signal: 交易信号
-        :param current_price: 当前价格
-        """
-        symbol = signal['symbol']
-        
-        # 如果已有持仓，先平仓
-        if symbol in self.positions:
-            self._close_position(symbol, current_price, signal['timestamp'], 'signal')
-        
-        # 开新仓
-        if signal['direction'] != 0:
-            self._open_position(signal, current_price)
-            
-    def _open_position(self, signal: Dict, current_price: float):
-        """
-        开仓
-        :param signal: 交易信号
-        :param current_price: 当前价格
-        """
-        symbol = signal['symbol']
-        direction = signal['direction']
-        size = POSITION_SIZE * self.initial_capital / current_price
-        
-        # 计算交易成本
-        commission = size * current_price * COMMISSION_RATE
-        slippage = size * current_price * SLIPPAGE
-        total_cost = commission + slippage
-        
-        # 检查资金是否足够
-        if total_cost > self.current_capital:
-            logger.warning(f"资金不足，无法开仓: {symbol}")
+                # 根据指标类型初始化不同的技术指标
+                if indicator == 'SMA':
+                    period = params.get('period', 20)
+                    self.indicators['SMA'] = bt.indicators.SMA(period=period)
+                elif indicator == 'EMA':
+                    period = params.get('period', 20)
+                    self.indicators['EMA'] = bt.indicators.EMA(period=period)
+                elif indicator == 'MACD':
+                    fast = params.get('fast', 12)
+                    slow = params.get('slow', 26)
+                    signal = params.get('signal', 9)
+                    self.indicators['MACD'] = bt.indicators.MACD(
+                        period_me1=fast,
+                        period_me2=slow,
+                        period_signal=signal
+                    )
+                elif indicator == 'RSI':
+                    period = params.get('period', 14)
+                    self.indicators['RSI'] = bt.indicators.RSI(period=period)
+                elif indicator == 'Bollinger':
+                    period = params.get('period', 20)
+                    devfactor = params.get('stdev', 2)
+                    self.indicators['Bollinger'] = bt.indicators.BollingerBands(
+                        period=period,
+                        devfactor=devfactor
+                    )
+                # 可以添加更多指标...
+
+    def next(self):
+        """生成交易信号"""
+        if self.order:
             return
             
-        # 记录持仓
-        self.positions[symbol] = {
-            'direction': direction,
-            'size': size,
-            'entry_price': current_price,
-            'stop_loss': signal['stop_loss'],
-            'take_profit': signal['take_profit'],
-            'entry_time': signal['timestamp']
-        }
+        # 解析策略规则
+        rule = self.strategy_config['rule']
         
-        # 更新资金
-        self.current_capital -= total_cost
+        # 根据规则生成信号
+        if "close > SMA" in rule:
+            if not self.position and self.data.close[0] > self.indicators['SMA'][0]:
+                self.buy()
+            elif self.position and self.data.close[0] < self.indicators['SMA'][0]:
+                self.close()
+                
+        elif "close < SMA" in rule:
+            if not self.position and self.data.close[0] < self.indicators['SMA'][0]:
+                self.buy()
+            elif self.position and self.data.close[0] > self.indicators['SMA'][0]:
+                self.close()
+                
+        elif "RSI <" in rule:
+            th_low = self.strategy_config['params'].get('RSI', {}).get('th_low', 30)
+            if not self.position and self.indicators['RSI'][0] < th_low:
+                self.buy()
+            elif self.position and self.indicators['RSI'][0] > 70:  # 默认超买阈值
+                self.close()
+                
+        elif "RSI >" in rule:
+            th_high = self.strategy_config['params'].get('RSI', {}).get('th_high', 70)
+            if not self.position and self.indicators['RSI'][0] > th_high:
+                self.buy()
+            elif self.position and self.indicators['RSI'][0] < 30:  # 默认超卖阈值
+                self.close()
+                
+        # 可以添加更多规则判断...
+
+class BacktestEngine:
+    def __init__(self):
+        """初始化回测引擎"""
+        self.cerebro = bt.Cerebro()
+        self.cerebro.broker.setcash(INITIAL_CAPITAL)
+        self.cerebro.broker.setcommission(commission=COMMISSION_RATE)
+        self.cerebro.addsizer(bt.sizers.PercentSizer, percents=10)  # 每次交易10%仓位
         
-        # 记录交易
-        self.trades.append({
-            'symbol': symbol,
-            'direction': direction,
-            'size': size,
-            'price': current_price,
-            'timestamp': signal['timestamp'],
-            'type': 'open',
-            'cost': total_cost
+        # 添加分析器
+        self.cerebro.addanalyzer(bt.analyzers.SharpeRatio, _name='sharpe')
+        self.cerebro.addanalyzer(bt.analyzers.DrawDown, _name='drawdown')
+        self.cerebro.addanalyzer(bt.analyzers.TradeAnalyzer, _name='trades')
+        self.cerebro.addanalyzer(bt.analyzers.Returns, _name='returns')
+
+    def set_data(self, data: pd.DataFrame) -> None:
+        """
+        设置回测数据
+        
+        Args:
+            data: 包含历史价格和技术指标的DataFrame
+        """
+        if not isinstance(data, pd.DataFrame):
+            raise ValueError("回测数据必须是pandas DataFrame")
+            
+        required_columns = ['OPEN', 'HIGH', 'LOW', 'CLOSE', 'VOLUME']
+        if not all(col in data.columns for col in required_columns):
+            raise ValueError("回测数据必须包含OHLCV数据")
+            
+        # 转换数据格式
+        data = data.rename(columns={
+            'OPEN': 'open',
+            'HIGH': 'high',
+            'LOW': 'low',
+            'CLOSE': 'close',
+            'VOLUME': 'volume'
         })
         
-    def _close_position(self, symbol: str, current_price: float, timestamp: pd.Timestamp, reason: str):
+        # 添加数据到回测引擎
+        datafeed = bt.feeds.PandasData(dataname=data)
+        self.cerebro.adddata(datafeed)
+
+    def add_strategy(self, strategy_config: Dict[str, Any]) -> None:
         """
-        平仓
-        :param symbol: 交易对
-        :param current_price: 当前价格
-        :param timestamp: 时间戳
-        :param reason: 平仓原因
+        添加策略
+        
+        Args:
+            strategy_config: 策略配置字典
         """
-        position = self.positions[symbol]
-        
-        # 计算盈亏
-        pnl = position['direction'] * position['size'] * (current_price - position['entry_price'])
-        
-        # 计算交易成本
-        commission = position['size'] * current_price * COMMISSION_RATE
-        slippage = position['size'] * current_price * SLIPPAGE
-        total_cost = commission + slippage
-        
-        # 更新资金
-        self.current_capital += pnl - total_cost
-        
-        # 记录交易
-        self.trades.append({
-            'symbol': symbol,
-            'direction': -position['direction'],
-            'size': position['size'],
-            'price': current_price,
-            'timestamp': timestamp,
-            'type': 'close',
-            'reason': reason,
-            'pnl': pnl,
-            'cost': total_cost
-        })
-        
-        # 移除持仓
-        del self.positions[symbol]
-        
-    def _calculate_total_equity(self, current_price: float) -> float:
+        self.cerebro.addstrategy(MetaStrategy, strategy_config=strategy_config)
+
+    def run_backtest(self) -> Dict[str, Any]:
         """
-        计算总权益
-        :param current_price: 当前价格
-        :return: 总权益
-        """
-        total_equity = self.current_capital
+        运行回测
         
-        for position in self.positions.values():
-            unrealized_pnl = position['direction'] * position['size'] * (current_price - position['entry_price'])
-            total_equity += unrealized_pnl
-            
-        return total_equity
-        
-    def _calculate_results(self) -> Dict:
+        Returns:
+            Dict[str, Any]: 回测结果
         """
-        计算回测结果
-        :return: 回测结果字典
-        """
-        if not self.trades:
-            return {
-                'total_return': 0,
-                'sharpe_ratio': 0,
-                'max_drawdown': 0,
-                'win_rate': 0,
-                'total_trades': 0,
-                'profit_factor': 0
-            }
-            
-        # 计算收益率
-        total_return = (self.current_capital - self.initial_capital) / self.initial_capital
+        # 运行回测
+        results = self.cerebro.run()
         
-        # 计算夏普比率
-        returns = pd.Series([t['pnl'] for t in self.trades if t['type'] == 'close'])
-        sharpe_ratio = np.sqrt(252) * returns.mean() / returns.std() if len(returns) > 1 else 0
+        # 获取回测结果
+        strat = results[0]
+        
+        # 计算回测指标
+        total_return = (self.cerebro.broker.getvalue() / INITIAL_CAPITAL) - 1
+        
+        # 计算年化收益率
+        days = (strat.data.datetime.date(-1) - strat.data.datetime.date(0)).days
+        annual_return = (1 + total_return) ** (365 / days) - 1
         
         # 计算最大回撤
-        equity_curve = pd.DataFrame(self.equity_curve)
-        rolling_max = equity_curve['equity'].expanding().max()
-        drawdowns = (equity_curve['equity'] - rolling_max) / rolling_max
-        max_drawdown = drawdowns.min()
+        drawdown = strat.analyzers.drawdown.get_analysis()
+        max_drawdown = drawdown['max']['drawdown'] / 100
+        
+        # 计算夏普比率
+        sharpe = strat.analyzers.sharpe.get_analysis()
+        sharpe_ratio = sharpe['sharperatio']
         
         # 计算胜率
-        winning_trades = len([t for t in self.trades if t['type'] == 'close' and t['pnl'] > 0])
-        total_trades = len([t for t in self.trades if t['type'] == 'close'])
-        win_rate = winning_trades / total_trades if total_trades > 0 else 0
-        
-        # 计算盈亏比
-        gross_profit = sum([t['pnl'] for t in self.trades if t['type'] == 'close' and t['pnl'] > 0])
-        gross_loss = abs(sum([t['pnl'] for t in self.trades if t['type'] == 'close' and t['pnl'] < 0]))
-        profit_factor = gross_profit / gross_loss if gross_loss > 0 else float('inf')
+        trades = strat.analyzers.trades.get_analysis()
+        win_rate = trades['won'] / trades['total'] if trades['total'] > 0 else 0
         
         return {
+            'strategy_name': strat.strategy_config['name'],
             'total_return': total_return,
-            'sharpe_ratio': sharpe_ratio,
+            'annual_return': annual_return,
             'max_drawdown': max_drawdown,
+            'sharpe_ratio': sharpe_ratio,
             'win_rate': win_rate,
-            'total_trades': total_trades,
-            'profit_factor': profit_factor,
-            'trades': self.trades,
-            'equity_curve': self.equity_curve
-        } 
+            'total_trades': trades['total'],
+            'trades': trades,
+            'equity_curve': strat.analyzers.returns.get_analysis()
+        }
+
+def backtest_strategy(strategy: Dict[str, Any], 
+                     data: pd.DataFrame,
+                     initial_capital: float = 100000.0) -> Dict[str, Any]:
+    """
+    回测单个策略
+    
+    Args:
+        strategy: 策略配置字典
+        data: 回测数据
+        initial_capital: 初始资金
+        
+    Returns:
+        Dict[str, Any]: 回测结果
+    """
+    engine = BacktestEngine()
+    engine.set_data(data)
+    engine.add_strategy(strategy)
+    return engine.run_backtest()
+
+def backtest_strategies(strategies: List[Dict[str, Any]],
+                       data: pd.DataFrame,
+                       initial_capital: float = 100000.0) -> List[Dict[str, Any]]:
+    """
+    回测多个策略
+    
+    Args:
+        strategies: 策略配置列表
+        data: 回测数据
+        initial_capital: 初始资金
+        
+    Returns:
+        List[Dict[str, Any]]: 回测结果列表
+    """
+    results = []
+    for strategy in strategies:
+        result = backtest_strategy(strategy, data, initial_capital)
+        results.append(result)
+    return results 
