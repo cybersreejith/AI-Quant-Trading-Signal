@@ -3,6 +3,12 @@
 包含所有技术指标的参数空间、字段定义和规则模板
 """
 
+from langchain.prompts import ChatPromptTemplate
+from langchain.output_parsers import JsonOutputParser
+from langchain.chat_models.openai import ChatOpenAI
+import json
+import textwrap
+
 INDICATOR_META = {
     # === 趋势类 =========================================================
     "SMA": {
@@ -165,10 +171,6 @@ def build_prompt(num_strats: int,
     Returns:
         ChatPromptTemplate: 组装好的提示模板
     """
-    from langchain.prompts import ChatPromptTemplate
-    import json
-    import textwrap
-
     system_part = textwrap.dedent(f"""
         You are an expert quant trader.
         Design {num_strats} trading strategies **ONLY** with the indicators below.
@@ -194,14 +196,11 @@ def generate_strategies(n: int = 3) -> list[dict]:
     Returns:
         list[dict]: 生成的策略列表，每个策略包含name、indicators、params和rule字段
     """
-    from langchain.output_parsers import JsonOutputParser
-    from langchain.chat_models.openai import ChatOpenAI
-    
     # 构建提示模板
     prompt = build_prompt(n, INDICATOR_META)
     
     # 初始化LLM和解析器
-    llm = ChatOpenAI(model="gpt-4o-mini", temperature=0.2)
+    llm = ChatOpenAI(model="gpt-4o", temperature=0.2)
     parser = JsonOutputParser()
     
     # 组合成Chain：Prompt → LLM → JSON解析

@@ -13,129 +13,9 @@ from config.settings import (
     INITIAL_CAPITAL,
     COMMISSION_RATE
 )
-from config.indicator_meta import INDICATOR_META
+from core.agents.Strategy_agent import generate_strategies
 
 logger = setup_logger(__name__)
-
-class StrategyBase(bt.Strategy):
-    """策略基类"""
-    params = (
-        ('printlog', False),
-    )
-
-    def log(self, txt, dt=None, doprint=False):
-        """日志记录"""
-        if self.params.printlog or doprint:
-            dt = dt or self.datas[0].datetime.date(0)
-            logger.info(f'{dt.isoformat()} {txt}')
-
-    def notify_order(self, order):
-        """订单状态通知"""
-        if order.status in [order.Submitted, order.Accepted]:
-            return
-
-        if order.status in [order.Completed]:
-            if order.isbuy():
-                self.log(f'买入执行, 价格: {order.executed.price:.2f}, 成本: {order.executed.value:.2f}, 佣金: {order.executed.comm:.2f}')
-            else:
-                self.log(f'卖出执行, 价格: {order.executed.price:.2f}, 成本: {order.executed.value:.2f}, 佣金: {order.executed.comm:.2f}')
-
-        elif order.status in [order.Canceled, order.Margin, order.Rejected]:
-            self.log('订单取消/保证金不足/拒绝')
-
-        self.order = None
-
-    def notify_trade(self, trade):
-        """交易通知"""
-        if not trade.isclosed:
-            return
-
-        self.log(f'交易利润, 毛利润: {trade.pnl:.2f}, 净利润: {trade.pnlcomm:.2f}')
-
-class MetaStrategy(StrategyBase):
-    """基于INDICATOR_META的通用策略类"""
-    
-    def __init__(self, strategy_config: Dict[str, Any]):
-        """
-        初始化策略
-        
-        Args:
-            strategy_config: 策略配置字典，包含name、indicators、params和rule
-        """
-        super().__init__()
-        self.strategy_config = strategy_config
-        self.indicators = {}
-        
-        # 初始化指标
-        for indicator in strategy_config['indicators']:
-            if indicator in INDICATOR_META:
-                meta = INDICATOR_META[indicator]
-                params = strategy_config['params'].get(indicator, {})
-                
-                # 根据指标类型初始化不同的技术指标
-                if indicator == 'SMA':
-                    period = params.get('period', 20)
-                    self.indicators['SMA'] = bt.indicators.SMA(period=period)
-                elif indicator == 'EMA':
-                    period = params.get('period', 20)
-                    self.indicators['EMA'] = bt.indicators.EMA(period=period)
-                elif indicator == 'MACD':
-                    fast = params.get('fast', 12)
-                    slow = params.get('slow', 26)
-                    signal = params.get('signal', 9)
-                    self.indicators['MACD'] = bt.indicators.MACD(
-                        period_me1=fast,
-                        period_me2=slow,
-                        period_signal=signal
-                    )
-                elif indicator == 'RSI':
-                    period = params.get('period', 14)
-                    self.indicators['RSI'] = bt.indicators.RSI(period=period)
-                elif indicator == 'Bollinger':
-                    period = params.get('period', 20)
-                    devfactor = params.get('stdev', 2)
-                    self.indicators['Bollinger'] = bt.indicators.BollingerBands(
-                        period=period,
-                        devfactor=devfactor
-                    )
-                # 可以添加更多指标...
-
-    def next(self):
-        """生成交易信号"""
-        if self.order:
-            return
-            
-        # 解析策略规则
-        rule = self.strategy_config['rule']
-        
-        # 根据规则生成信号
-        if "close > SMA" in rule:
-            if not self.position and self.data.close[0] > self.indicators['SMA'][0]:
-                self.buy()
-            elif self.position and self.data.close[0] < self.indicators['SMA'][0]:
-                self.close()
-                
-        elif "close < SMA" in rule:
-            if not self.position and self.data.close[0] < self.indicators['SMA'][0]:
-                self.buy()
-            elif self.position and self.data.close[0] > self.indicators['SMA'][0]:
-                self.close()
-                
-        elif "RSI <" in rule:
-            th_low = self.strategy_config['params'].get('RSI', {}).get('th_low', 30)
-            if not self.position and self.indicators['RSI'][0] < th_low:
-                self.buy()
-            elif self.position and self.indicators['RSI'][0] > 70:  # 默认超买阈值
-                self.close()
-                
-        elif "RSI >" in rule:
-            th_high = self.strategy_config['params'].get('RSI', {}).get('th_high', 70)
-            if not self.position and self.indicators['RSI'][0] > th_high:
-                self.buy()
-            elif self.position and self.indicators['RSI'][0] < 30:  # 默认超卖阈值
-                self.close()
-                
-        # 可以添加更多规则判断...
 
 class BacktestEngine:
     def __init__(self):
@@ -144,6 +24,7 @@ class BacktestEngine:
         self.cerebro.broker.setcash(INITIAL_CAPITAL)
         self.cerebro.broker.setcommission(commission=COMMISSION_RATE)
         self.cerebro.addsizer(bt.sizers.PercentSizer, percents=10)  # 每次交易10%仓位
+        self.strategy_config = None
         
         # 添加分析器
         self.cerebro.addanalyzer(bt.analyzers.SharpeRatio, _name='sharpe')
@@ -183,9 +64,37 @@ class BacktestEngine:
         添加策略
         
         Args:
-            strategy_config: 策略配置字典
+            strategy_config: 策略配置字典，由generate_strategies生成
         """
-        self.cerebro.addstrategy(MetaStrategy, strategy_config=strategy_config)
+        self.strategy_config = strategy_config
+        
+        # 创建策略类
+        class Strategy(bt.Strategy):
+            def __init__(self):
+                self.indicators = {}
+                for indicator in strategy_config['indicators']:
+                    params = strategy_config['params'].get(indicator, {})
+                    self.indicators[indicator] = getattr(bt.indicators, indicator)(**params)
+                    
+            def next(self):
+                if self.order:
+                    return
+                    
+                rule = strategy_config['rule']
+                if not self.position:
+                    if eval(rule, {
+                        'close': self.data.close[0],
+                        **{k: v[0] for k, v in self.indicators.items()}
+                    }):
+                        self.buy()
+                else:
+                    if not eval(rule, {
+                        'close': self.data.close[0],
+                        **{k: v[0] for k, v in self.indicators.items()}
+                    }):
+                        self.close()
+                        
+        self.cerebro.addstrategy(Strategy)
 
     def run_backtest(self) -> Dict[str, Any]:
         """
@@ -220,7 +129,7 @@ class BacktestEngine:
         win_rate = trades['won'] / trades['total'] if trades['total'] > 0 else 0
         
         return {
-            'strategy_name': strat.strategy_config['name'],
+            'strategy_name': self.strategy_config['name'],
             'total_return': total_return,
             'annual_return': annual_return,
             'max_drawdown': max_drawdown,
@@ -268,4 +177,26 @@ def backtest_strategies(strategies: List[Dict[str, Any]],
     for strategy in strategies:
         result = backtest_strategy(strategy, data, initial_capital)
         results.append(result)
+    return results
+
+def backtest_generated_strategies(data: pd.DataFrame,
+                                n_strategies: int = 3,
+                                initial_capital: float = 100000.0) -> List[Dict[str, Any]]:
+    """
+    回测由 generate_strategies 生成的策略
+    
+    Args:
+        data: 回测数据
+        n_strategies: 要生成的策略数量
+        initial_capital: 初始资金
+        
+    Returns:
+        List[Dict[str, Any]]: 回测结果列表
+    """
+    # 生成策略
+    strategies = generate_strategies(n=n_strategies)
+    
+    # 回测策略
+    results = backtest_strategies(strategies, data, initial_capital)
+    
     return results 
