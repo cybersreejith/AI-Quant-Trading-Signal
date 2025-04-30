@@ -31,15 +31,15 @@ INDICATOR_META = {
     },
     "MACD": {
         "desc": "快速与慢速 EMA 之差，判断多空动能",
-        "fields": ["MACD", "Signal", "Hist"],
+        "fields": ["MACD", "MACD_SIGNAL", "MACD_HIST"],
         "param_space": {
             "fast":   [8, 12, 20],
             "slow":   [18, 26, 40],
             "signal": [6, 9, 12]
         },
         "rule_templates": [
-            "MACD > Signal",                             # 金叉
-            "MACD_crosses_below_Signal"                  # 死叉
+            "MACD > MACD_SIGNAL",                        # 金叉
+            "MACD_crosses_below_MACD_SIGNAL"             # 死叉
         ]
     },
     "ADX": {
@@ -66,22 +66,13 @@ INDICATOR_META = {
             "RSI > {th_high}"                            # 逢高卖
         ]
     },
-    "Stoch": {
+    "STOCH": {
         "desc": "随机指标 (KD)，判断超买超卖拐点",
-        "fields": ["%K", "%D"],
+        "fields": ["STOCH_K", "STOCH_D"],
         "param_space": {"k_period":[9,14], "d_period":[3]},
         "rule_templates": [
-            "%K_crosses_above_%D",                       # 看涨
-            "%K_crosses_below_%D"                        # 看跌
-        ]
-    },
-    "CCI": {
-        "desc": "顺势/反转；±100 为常用阈值",
-        "fields": ["CCI"],
-        "param_space": {"period":[14,20], "th":[100,150]},
-        "rule_templates": [
-            "CCI > {th}",                                # 强势
-            "CCI < -{th}"                                # 弱势
+            "STOCH_K_crosses_above_STOCH_D",             # 看涨
+            "STOCH_K_crosses_below_STOCH_D"              # 看跌
         ]
     },
 
@@ -92,22 +83,22 @@ INDICATOR_META = {
         "param_space": {"period":[7,14,20]},
         "rule_templates": []
     },
-    "Bollinger": {
+    "BBANDS": {
         "desc": "布林带，±k·σ 通道",
-        "fields": ["Boll_Upper", "Boll_Mid", "Boll_Lower"],
+        "fields": ["BB_UPPER", "BB_MIDDLE", "BB_LOWER"],
         "param_space": {"period":[20], "stdev":[2, 2.5]},
         "rule_templates": [
-            "close > Boll_Upper",                        # 突破
-            "close < Boll_Lower"
+            "close > BB_UPPER",                          # 突破
+            "close < BB_LOWER"
         ]
     },
-    "Donchian": {
+    "DONCHIAN": {
         "desc": "唐奇安通道，高低突破",
-        "fields": ["Don_High", "Don_Low"],
+        "fields": ["DONCHIAN_HIGH", "DONCHIAN_LOW"],
         "param_space": {"period":[20,55]},
         "rule_templates": [
-            "close > Don_High",                          # 多头突破
-            "close < Don_Low"                            # 空头突破
+            "close > DONCHIAN_HIGH",                     # 多头突破
+            "close < DONCHIAN_LOW"                       # 空头突破
         ]
     },
 
@@ -129,15 +120,6 @@ INDICATOR_META = {
         "param_space": {},
         "rule_templates": [
             "OBV_rising_for_3_bars"                      # OBV 3 连升
-        ]
-    },
-    "VWAP": {
-        "desc": "成交量加权平均价（日内）",
-        "fields": ["VWAP"],
-        "param_space": {},
-        "rule_templates": [
-            "close_crosses_above_VWAP",
-            "close_crosses_below_VWAP"
         ]
     }
 }
