@@ -199,4 +199,97 @@ def backtest_generated_strategies(data: pd.DataFrame,
     # 回测策略
     results = backtest_strategies(strategies, data, initial_capital)
     
-    return results 
+    return results
+
+def evaluate_backtest(backtest_results: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    评估回测效果，生成详细的性能分析报告
+    
+    Args:
+        backtest_results: 回测结果字典，包含策略名称、收益率、回撤等信息
+        
+    Returns:
+        Dict[str, Any]: 包含详细评估指标的字典
+    """
+    # 基础指标
+    total_return = backtest_results['total_return']
+    annual_return = backtest_results['annual_return']
+    max_drawdown = backtest_results['max_drawdown']
+    sharpe_ratio = backtest_results['sharpe_ratio']
+    win_rate = backtest_results['win_rate']
+    total_trades = backtest_results['total_trades']
+    
+    # 计算风险调整后的收益指标
+    sortino_ratio = annual_return / (max_drawdown + 1e-6)  # 索提诺比率
+    calmar_ratio = annual_return / (max_drawdown + 1e-6)   # 卡玛比率
+    
+    # 交易统计
+    trades = backtest_results['trades']
+    avg_trade_return = trades['pnl']['net']['average'] if 'pnl' in trades else 0
+    profit_factor = trades['pnl']['net']['total'] / abs(trades['pnl']['net']['total'] - trades['pnl']['gross']['total']) if 'pnl' in trades else 0
+    
+    # 资金曲线分析
+    equity_curve = backtest_results['equity_curve']
+    equity_series = pd.Series(equity_curve)
+    volatility = equity_series.pct_change().std() * np.sqrt(252)  # 年化波动率
+    
+    # 计算连续亏损次数
+    consecutive_losses = 0
+    max_consecutive_losses = 0
+    for trade in trades.get('trades', []):
+        if trade['pnl'] < 0:
+            consecutive_losses += 1
+            max_consecutive_losses = max(max_consecutive_losses, consecutive_losses)
+        else:
+            consecutive_losses = 0
+    
+    # 生成评估报告
+    evaluation_report = {
+        'strategy_name': backtest_results['strategy_name'],
+        'performance_metrics': {
+            'total_return': total_return,
+            'annual_return': annual_return,
+            'max_drawdown': max_drawdown,
+            'sharpe_ratio': sharpe_ratio,
+            'sortino_ratio': sortino_ratio,
+            'calmar_ratio': calmar_ratio,
+            'volatility': volatility
+        },
+        'trading_statistics': {
+            'total_trades': total_trades,
+            'win_rate': win_rate,
+            'profit_factor': profit_factor,
+            'avg_trade_return': avg_trade_return,
+            'max_consecutive_losses': max_consecutive_losses
+        },
+        'risk_metrics': {
+            'value_at_risk_95': equity_series.pct_change().quantile(0.05),
+            'expected_shortfall': equity_series.pct_change()[equity_series.pct_change() <= equity_series.pct_change().quantile(0.05)].mean()
+        }
+    }
+    
+    # 添加评估结论
+    evaluation_report['conclusion'] = {
+        'overall_rating': '优秀' if (sharpe_ratio > 1.5 and win_rate > 0.6 and max_drawdown < 0.2) else 
+                         '良好' if (sharpe_ratio > 1.0 and win_rate > 0.5 and max_drawdown < 0.3) else 
+                         '一般' if (sharpe_ratio > 0.5 and win_rate > 0.4 and max_drawdown < 0.4) else '较差',
+        'strengths': [],
+        'weaknesses': []
+    }
+    
+    # 分析优势和劣势
+    if sharpe_ratio > 1.0:
+        evaluation_report['conclusion']['strengths'].append('风险调整后收益表现优秀')
+    if win_rate > 0.6:
+        evaluation_report['conclusion']['strengths'].append('胜率较高')
+    if max_drawdown < 0.2:
+        evaluation_report['conclusion']['strengths'].append('回撤控制良好')
+        
+    if sharpe_ratio < 0.5:
+        evaluation_report['conclusion']['weaknesses'].append('风险调整后收益表现不佳')
+    if win_rate < 0.4:
+        evaluation_report['conclusion']['weaknesses'].append('胜率较低')
+    if max_drawdown > 0.3:
+        evaluation_report['conclusion']['weaknesses'].append('回撤较大')
+    
+    return evaluation_report 

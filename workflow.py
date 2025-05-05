@@ -14,6 +14,7 @@ from core.indicators import calculate_indicators
 from core.agents.sentiment_agent import SentimentAgent
 from datetime import datetime, timedelta
 from core.agents.report_agent import ReportAgent
+from core.backtest import evaluate_backtest
 
 # 配置日志
 logging.basicConfig(level=logging.INFO)
@@ -56,8 +57,6 @@ def create_workflow_graph() -> Graph:
     workflow = StateGraph(WorkflowState)
     
     # 定义节点
-    workflow.add_node("select_asset_type", select_asset_type_node)
-    workflow.add_node("display_reference_list", display_reference_list_node)
     workflow.add_node("input_symbol", input_symbol_node)
     workflow.add_node("get_date_range", get_date_range_node)
     workflow.add_node("get_historical_data", get_historical_data_node)
@@ -71,8 +70,6 @@ def create_workflow_graph() -> Graph:
     workflow.add_node("generate_final_report", generate_final_report_node)
     
     # 定义边
-    workflow.add_edge("select_asset_type", "display_reference_list")
-    workflow.add_edge("display_reference_list", "input_symbol")
     workflow.add_edge("input_symbol", "get_date_range")
     workflow.add_edge("get_date_range", "get_historical_data")
     workflow.add_edge("get_historical_data", "calculate_indicators")
@@ -92,80 +89,27 @@ def create_workflow_graph() -> Graph:
     workflow.add_edge("analyze_market_sentiment", "generate_final_report")
     
     # 设置入口和出口
-    workflow.set_entry_point("select_asset_type")
+    workflow.set_entry_point("input_symbol")
     workflow.set_finish_point("generate_final_report")
     
     return workflow.compile()
 
 # 节点函数定义
-def select_asset_type_node(state: WorkflowState) -> WorkflowState:
-    """资产类型选择节点"""
-    try:
-        logger.info("选择资产类型")
-        
-        # 调用资产类型选择菜单
-        choice = select_asset_type_menu()
-        
-        # 如果用户选择退出
-        if choice is None:
-            logger.info("用户选择退出")
-            return state
-            
-        # 将选择转换为资产类型
-        asset_types = {
-            '1': '股票',
-            '2': 'ETF',
-            '3': '外汇',
-            '4': '加密货币'
-        }
-        
-        # 更新状态
-        state['asset_type'] = asset_types[choice]
-        logger.info(f"选择的资产类型: {state['asset_type']}")
-        
-        return state
-    except Exception as e:
-        logger.error(f"选择资产类型时出错: {str(e)}")
-        raise
-
-def display_reference_list_node(state: WorkflowState) -> WorkflowState:
-    """显示参考列表节点"""
-    try:
-        logger.info("显示参考列表")
-        
-        # 检查资产类型是否已选择
-        if not state.get('asset_type'):
-            logger.error("未选择资产类型")
-            raise ValueError("未选择资产类型")
-            
-        # 调用显示参考列表函数
-        display_asset_reference_list(state['asset_type'])
-        
-        return state
-    except Exception as e:
-        logger.error(f"显示参考列表时出错: {str(e)}")
-        raise
-
 def input_symbol_node(state: WorkflowState) -> WorkflowState:
-    """输入资产代码节点"""
+    """处理资产代码节点"""
     try:
-        logger.info("输入资产代码")
+        logger.info("处理资产代码")
         
-        # 调用资产代码输入函数
-        symbol = input_asset_symbol()
-        
-        # 如果用户未输入资产代码
-        if symbol is None:
-            logger.info("用户未输入资产代码")
-            return state
+        # 检查资产代码是否已设置
+        if not state.get('symbol'):
+            logger.error("未设置资产代码")
+            raise ValueError("未设置资产代码")
             
-        # 更新状态
-        state['symbol'] = symbol
-        logger.info(f"输入的资产代码: {state['symbol']}")
+        logger.info(f"资产代码: {state['symbol']}")
         
         return state
     except Exception as e:
-        logger.error(f"输入资产代码时出错: {str(e)}")
+        logger.error(f"处理资产代码时出错: {str(e)}")
         raise
 
 def get_date_range_node(state: WorkflowState) -> WorkflowState:
@@ -275,8 +219,37 @@ def run_backtest_node(state: WorkflowState) -> WorkflowState:
 def evaluate_backtest_node(state: WorkflowState) -> WorkflowState:
     """评估回测结果节点"""
     try:
-        # TODO: 实现回测结果评估逻辑
         logger.info("评估回测结果")
+        
+        # 检查必要的状态
+        if state.get('backtest_results') is None:
+            logger.error("未获取回测结果")
+            raise ValueError("未获取回测结果")
+            
+        # 获取回测结果
+        backtest_results = state['backtest_results']
+        
+        # 使用evaluate_backtest函数评估回测结果
+        evaluation = evaluate_backtest(backtest_results)
+        
+        # 添加满意度判断
+        evaluation['is_satisfactory'] = (
+            evaluation['performance_metrics']['sharpe_ratio'] > 1.0 and
+            evaluation['performance_metrics']['max_drawdown'] < 0.3 and
+            evaluation['trading_statistics']['win_rate'] > 0.5
+        )
+        
+        # 更新状态
+        state['backtest_evaluation'] = evaluation
+        
+        # 记录评估结果
+        logger.info(f"回测评估完成:")
+        logger.info(f"策略名称: {evaluation['strategy_name']}")
+        logger.info(f"总体评级: {evaluation['conclusion']['overall_rating']}")
+        logger.info(f"是否满意: {'是' if evaluation['is_satisfactory'] else '否'}")
+        logger.info(f"优势: {', '.join(evaluation['conclusion']['strengths'])}")
+        logger.info(f"劣势: {', '.join(evaluation['conclusion']['weaknesses'])}")
+        
         return state
     except Exception as e:
         logger.error(f"评估回测结果时出错: {str(e)}")
@@ -415,8 +388,8 @@ if __name__ == "__main__":
     # 初始化状态
     initial_state = WorkflowState(
         messages=[],
-        asset_type="",
-        symbol="",
+        asset_type="",  # 由前端传入
+        symbol="",      # 由前端传入
         start_date="",
         end_date="",
         historical_data=None,

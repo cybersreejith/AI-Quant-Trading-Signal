@@ -8,7 +8,6 @@ from typing import List, Dict, Optional
 import os
 from utils.logger import setup_logger
 from core.indicators import calculate_indicators
-from core.strategy import TunableClassicTrendFollow
 from core.backtest import Backtest
 from config.settings import (
     START_DATE,
@@ -159,27 +158,6 @@ def prepare_backtest_data(symbols: List[str], start_date: str = None, end_date: 
 
 
 
-def process_assets_for_backtest(symbols: List[str], start_date: str = None, end_date: str = None) -> None:
-    """
-    处理资产数据并准备回测数据集
-    
-    Args:
-        symbols: 资产代码列表
-        start_date: 开始日期
-        end_date: 结束日期
-    """
-    try:
-        # 准备数据集
-        datasets = prepare_backtest_data(symbols, start_date, end_date)
-        
-        # 保存数据集
-        save_datasets(datasets)
-        
-        logging.info(f"成功处理 {len(datasets)} 个资产的数据")
-        
-    except Exception as e:
-        logging.error(f"处理资产数据时出错: {str(e)}")
-        raise
 
 def display_asset_reference_list(asset_type: str) -> None:
     """
@@ -194,13 +172,16 @@ def display_asset_reference_list(asset_type: str) -> None:
 
 def get_date_range() -> tuple[str, str]:
     """
-    获取用户输入的日期范围
+    获取过去一年的日期范围
     
     Returns:
-        开始日期和结束日期的元组
+        开始日期和结束日期的元组 (YYYY-MM-DD格式)
     """
-    start_date = input("请输入开始日期 (YYYY-MM-DD，直接回车使用默认值): ").strip()
-    end_date = input("请输入结束日期 (YYYY-MM-DD，直接回车使用默认值): ").strip()
+    # 计算日期范围（过去一年）
+    end_date = datetime.now().strftime('%Y-%m-%d')
+    start_date = (datetime.now() - timedelta(days=365)).strftime('%Y-%m-%d')
+    
+    logger.info(f"使用时间范围: {start_date} 至 {end_date}")
     return start_date, end_date
 
 def run_trading_analysis() -> None:
