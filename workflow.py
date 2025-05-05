@@ -11,9 +11,9 @@ from AI_Quant_Trading import (
     get_historical_data
 )
 from core.indicators import calculate_indicators
-from core.sentiment_analysis import SentimentAgent
+from core.agents.sentiment_agent import SentimentAgent
 from datetime import datetime, timedelta
-from core.report_generation import ReportAgent
+from core.agents.report_agent import ReportAgent
 
 # 配置日志
 logging.basicConfig(level=logging.INFO)
@@ -62,7 +62,7 @@ def create_workflow_graph() -> Graph:
     workflow.add_node("get_date_range", get_date_range_node)
     workflow.add_node("get_historical_data", get_historical_data_node)
     workflow.add_node("calculate_indicators", calculate_indicators_node)
-    workflow.add_node("prepare_backtest_data", prepare_backtest_data_node)
+    workflow.add_node("set_data", set_data_node)
     workflow.add_node("generate_trading_strategy", generate_trading_strategy_node)
     workflow.add_node("run_backtest", run_backtest_node)
     workflow.add_node("evaluate_backtest", evaluate_backtest_node)
@@ -76,8 +76,8 @@ def create_workflow_graph() -> Graph:
     workflow.add_edge("input_symbol", "get_date_range")
     workflow.add_edge("get_date_range", "get_historical_data")
     workflow.add_edge("get_historical_data", "calculate_indicators")
-    workflow.add_edge("calculate_indicators", "prepare_backtest_data")
-    workflow.add_edge("prepare_backtest_data", "generate_trading_strategy")
+    workflow.add_edge("calculate_indicators", "set_data")
+    workflow.add_edge("set_data", "generate_trading_strategy")
     workflow.add_edge("generate_trading_strategy", "run_backtest")
     workflow.add_edge("run_backtest", "evaluate_backtest")
     workflow.add_conditional_edges(
@@ -242,7 +242,7 @@ def calculate_indicators_node(state: WorkflowState) -> WorkflowState:
         logger.error(f"计算技术指标时出错: {str(e)}")
         raise
 
-def prepare_backtest_data_node(state: WorkflowState) -> WorkflowState:
+def set_data_node(state: WorkflowState) -> WorkflowState:
     """准备回测数据集节点"""
     try:
         # TODO: 实现回测数据集准备逻辑
