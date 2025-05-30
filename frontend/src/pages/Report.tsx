@@ -1,10 +1,14 @@
 import React from 'react';
-import { Card, Typography, Table } from 'antd';
+import { Card, Typography, Table, Button } from 'antd';
+import { ArrowLeftOutlined } from '@ant-design/icons';
 import ReactECharts from 'echarts-for-react';
+import { useNavigate } from 'react-router-dom';
 
 const { Title, Paragraph } = Typography;
 
 const Report: React.FC = () => {
+  const navigate = useNavigate();
+  
   // 示例数据
   const option = {
     title: {
@@ -29,7 +33,17 @@ const Report: React.FC = () => {
   return (
     <div>
       <Card style={{ marginBottom: 24 }}>
-        <Title level={3}>交易报告</Title>
+        <div style={{ display: 'flex', alignItems: 'center', marginBottom: 16 }}>
+          <Button 
+            type="text" 
+            icon={<ArrowLeftOutlined />} 
+            onClick={() => navigate('/')}
+            style={{ marginRight: 16 }}
+          >
+            返回
+          </Button>
+          <Title level={3} style={{ margin: 0 }}>交易报告</Title>
+        </div>
         <Paragraph>
           基于历史数据和技术指标分析生成的交易建议报告。
         </Paragraph>

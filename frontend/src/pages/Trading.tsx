@@ -1,9 +1,12 @@
 import React, { useState } from 'react';
 import { Card, Input, Button, Table, message, Radio, Space, List, Typography } from 'antd';
+import { ArrowLeftOutlined } from '@ant-design/icons';
+import { useNavigate } from 'react-router-dom';
 
 const { Text } = Typography;
 
 const Trading: React.FC = () => {
+  const navigate = useNavigate();
   const [assetType, setAssetType] = useState<string>('');
   const [symbol, setSymbol] = useState<string>('');
   const [showAssetList, setShowAssetList] = useState<boolean>(false);
@@ -67,7 +70,21 @@ const Trading: React.FC = () => {
   };
 
   return (
-    <Card title="交易信号生成">
+    <Card 
+      title={
+        <div style={{ display: 'flex', alignItems: 'center' }}>
+          <Button 
+            type="text" 
+            icon={<ArrowLeftOutlined />} 
+            onClick={() => navigate('/')}
+            style={{ marginRight: 16 }}
+          >
+            返回
+          </Button>
+          <span>交易信号生成</span>
+        </div>
+      }
+    >
       <div style={{ marginBottom: 24 }}>
         <div style={{ marginBottom: 16 }}>
           <h3>请选择资产类型：</h3>
