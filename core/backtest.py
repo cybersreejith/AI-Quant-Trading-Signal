@@ -4,6 +4,7 @@
 """
 
 import backtrader as bt
+from langchain.agents import tool
 import pandas as pd
 import numpy as np
 from typing import List, Dict, Any
@@ -178,7 +179,7 @@ def backtest_strategies(strategies: List[Dict[str, Any]],
         result = backtest_strategy(strategy, data, initial_capital)
         results.append(result)
     return results
-
+@tool
 def backtest_generated_strategies(data: pd.DataFrame,
                                 n_strategies: int = 3,
                                 initial_capital: float = 100000.0) -> List[Dict[str, Any]]:
@@ -201,6 +202,7 @@ def backtest_generated_strategies(data: pd.DataFrame,
     
     return results
 
+@tool
 def evaluate_backtest(backtest_results: Dict[str, Any]) -> Dict[str, Any]:
     """
     评估回测效果，生成详细的性能分析报告

@@ -1,10 +1,59 @@
 import pandas as pd
 import numpy as np
 import talib
+import yfinance as yf
+import logging
+from datetime import datetime, timedelta
+from typing import Optional
 from utils.logger import setup_logger
-
+from langchain.agents import tool
 logger = setup_logger(__name__)
 
+@tool
+def get_historical_data(symbol: str) -> Optional[pd.DataFrame]:
+    """
+    获取资产的历史数据，默认从当前时间往前推 1 年。    
+    参数:
+    symbol: 股票代码，如 'AAPL'
+
+    返回:
+    包含历史数据的 DataFrame，若失败返回 None
+    """
+    try:
+        # 设置默认日期范围
+        end_date = datetime.now().strftime('%Y-%m-%d')
+        start_date = (datetime.now() - timedelta(days=365)).strftime('%Y-%m-%d')
+            
+        # 获取历史数据
+        ticker = yf.Ticker(symbol)
+        df = ticker.history(start=start_date, end=end_date)
+        
+        if df.empty:
+            logging.warning(f"未找到 {symbol} 的历史数据")
+            return None
+            
+        # 重命名列，只重命名存在的列
+        column_mapping = {
+            'Open': 'Open',
+            'High': 'High',
+            'Low': 'Low',
+            'Close': 'Close',
+            'Volume': 'Volume',
+            'Dividends': 'Dividends',
+            'Stock Splits': 'Stock_Splits'
+        }
+        
+        # 只重命名存在的列
+        existing_columns = [col for col in column_mapping.keys() if col in df.columns]
+        df = df.rename(columns={col: column_mapping[col] for col in existing_columns})
+        
+        return df
+        
+    except Exception as e:
+        logging.error(f"获取 {symbol} 的历史数据时出错: {str(e)}")
+        return None
+
+@tool
 def calculate_indicators(data: pd.DataFrame) -> pd.DataFrame:
     """
     计算所有技术指标

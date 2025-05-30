@@ -10,6 +10,11 @@ from langchain.output_parsers import PydanticOutputParser
 from pydantic import BaseModel, Field
 import json
 import yfinance as yf
+from bs4 import BeautifulSoup
+from langchain.schema import Document
+from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain.vectorstores import FAISS
+from langchain.embeddings import OpenAIEmbeddings
 
 # 加载环境变量
 load_dotenv()
@@ -56,19 +61,20 @@ class SentimentAgent:
             openai_api_key=OPENAI_API_KEY
         )
         self._setup_prompts()
+        self.vector_store = None
         
     def _setup_prompts(self) -> None:
         """设置提示模板"""
         # 新闻分析提示模板
         self.news_analysis_prompt = ChatPromptTemplate.from_messages([
-            ("system", """你是一个专业的市场情绪分析师。请分析以下新闻内容，提取关键信息并评估市场情绪。
-            请按照以下格式输出：
+            ("system", """你是一个专业的市场情绪分析师。请结合以下背景材料和新闻内容，提取关键信息并评估市场情绪。
+            输出包括：
             1. 整体市场情绪（积极/中性/消极）
             2. 情绪得分（-1到1）
             3. 关键点分析（列表形式）
             4. 分析置信度（0到1）
             5. 新闻内容总结（200字以内）"""),
-            ("user", "{news_content}")
+            ("user", "【背景材料】\n{extra_context}\n\n【新闻内容】\n{news_content}")
         ])
         
         # 输出解析器
@@ -95,13 +101,25 @@ class SentimentAgent:
             for article in news:
                 # 转换时间戳为日期字符串
                 date = datetime.fromtimestamp(article['providerPublishTime']).strftime('%Y-%m-%d %H:%M:%S')
+                url = article['link']
                 
+                # 获取正文内容
+                full_text = ""
+                try:
+                    r = requests.get(url, timeout=5)
+                    soup = BeautifulSoup(r.text, "html.parser")
+                    paragraphs = soup.find_all("p")
+                    full_text = "\n".join(p.get_text() for p in paragraphs if p.get_text())
+                except Exception as e:
+                    logger.warning(f"抓取正文失败: {e}")   
+
                 formatted_articles.append({
                     "title": article['title'],
                     "source": article['publisher'],
                     "date": date,
                     "summary": article.get('summary', ''),
-                    "url": article['link']
+                    "url": article['link'],
+                    "content": full_text
                 })
                 
             return formatted_articles
@@ -127,12 +145,28 @@ class SentimentAgent:
                 f"来源: {article['source']}\n"
                 f"日期: {article['date']}\n"
                 f"摘要: {article['summary']}\n"
+                f"正文: {article['content'][:500]}\n"
                 for article in articles
             ])
+            # 初始化向量库
+            if not self.vector_store:
+                docs = [
+                    Document(page_content=article["content"] or article["summary"], metadata={"title": article["title"]})
+                    for article in articles
+                ]
+                splitter = RecursiveCharacterTextSplitter(chunk_size=300, chunk_overlap=50)
+                chunks = splitter.split_documents(docs)
+                self.vector_store = FAISS.from_documents(chunks, OpenAIEmbeddings())
+
+            query = articles[0]["title"] + " " + articles[0]["summary"]
+            results = self.vector_store.similarity_search(query, k=3)
+            extra_context = "\n\n".join([doc.page_content for doc in results])            
             
             # 调用模型分析
             response = self.model.predict(
-                self.news_analysis_prompt.format(news_content=news_content)
+                self.news_analysis_prompt.format(
+                    news_content=news_content,
+                    extra_context=extra_context)
             )
             
             # 解析输出

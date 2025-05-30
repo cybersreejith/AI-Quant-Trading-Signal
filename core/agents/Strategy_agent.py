@@ -6,6 +6,9 @@
 from langchain.prompts import ChatPromptTemplate
 from langchain.output_parsers import JsonOutputParser
 from langchain.chat_models.openai import ChatOpenAI
+from langchain.agents import tool, Tool, initialize_agent, AgentType
+from core.backtest import backtest_generated_strategies, evaluate_backtest
+from core.indicators import calculate_indicators, get_historical_data
 import json
 import textwrap
 
@@ -167,7 +170,7 @@ def build_prompt(num_strats: int,
     return ChatPromptTemplate.from_messages(
         [("system", system_part), ("user", user_part)]
     )
-
+@tool
 def generate_strategies(n: int = 3) -> list[dict]:
     """
     生成交易策略
@@ -191,3 +194,13 @@ def generate_strategies(n: int = 3) -> list[dict]:
     # 执行Chain生成策略
     spec_list = chain.invoke({})
     return spec_list 
+
+llm = ChatOpenAI(model="gpt-4o", temperature=0)
+tools = [generate_strategies, backtest_generated_strategies, evaluate_backtest, calculate_indicators, get_historical_data]
+
+strategy_agent = initialize_agent(
+    tools=tools,
+    llm=llm,
+    agent=AgentType.OPENAI_FUNCTIONS,
+    verbose=True
+)
