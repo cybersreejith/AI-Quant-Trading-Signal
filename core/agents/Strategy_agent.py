@@ -7,10 +7,17 @@ from langchain.prompts import ChatPromptTemplate
 from langchain.output_parsers import JsonOutputParser
 from langchain.chat_models.openai import ChatOpenAI
 from langchain.agents import tool, Tool, initialize_agent, AgentType
-from core.backtest import backtest_generated_strategies, evaluate_backtest
+from core.backtest import backtest_strategy, evaluate_backtest
 from core.indicators import calculate_indicators, get_historical_data
 import json
 import textwrap
+from datetime import datetime
+import logging
+import pandas as pd
+from typing import Dict, Any
+from utils.logger import setup_logger
+
+logger = setup_logger(__name__)
 
 INDICATOR_META = {
     # === 趋势类 =========================================================
@@ -142,14 +149,12 @@ STRAT_SCHEMA = {
     }
 }
 
-def build_prompt(num_strats: int,
-                 indicator_meta: dict,
+def build_prompt(indicator_meta: dict,
                  schema: dict = STRAT_SCHEMA) -> ChatPromptTemplate:
     """
     构建策略生成的提示模板
     
     Args:
-        num_strats: 需要生成的策略数量
         indicator_meta: 指标元数据字典
         schema: 策略配置模式定义
         
@@ -158,7 +163,7 @@ def build_prompt(num_strats: int,
     """
     system_part = textwrap.dedent(f"""
         You are an expert quant trader.
-        Design {num_strats} trading strategies **ONLY** with the indicators below.
+        Design a trading strategies **ONLY** with the indicators below.
         Output must pass the JSON schema, no extra text.
 
         ## JSON Schema
@@ -170,22 +175,18 @@ def build_prompt(num_strats: int,
     return ChatPromptTemplate.from_messages(
         [("system", system_part), ("user", user_part)]
     )
-@tool
-def generate_strategies(n: int = 3) -> list[dict]:
+
+@tool(name="generate_strategy", description="根据指标元数据，生成一个交易策略（包括规则、指标、参数等）")
+def generate_strategy() -> dict:
     """
-    生成交易策略
+    生成单个交易策略
     
-    Args:
-        n: 需要生成的策略数量，默认为3
-        
     Returns:
-        list[dict]: 生成的策略列表，每个策略包含name、indicators、params和rule字段
+        dict: 生成的策略，包含name、indicators、params和rule字段
     """
     # 构建提示模板
-    prompt = build_prompt(n, INDICATOR_META)
+    prompt = build_prompt(INDICATOR_META, STRAT_SCHEMA)
     
-    # 初始化LLM和解析器
-    llm = ChatOpenAI(model="gpt-4o", temperature=0.2)
     parser = JsonOutputParser()
     
     # 组合成Chain：Prompt → LLM → JSON解析
@@ -193,12 +194,60 @@ def generate_strategies(n: int = 3) -> list[dict]:
     
     # 执行Chain生成策略
     spec_list = chain.invoke({})
-    return spec_list 
+    return spec_list[0]  # 只返回第一个策略
 
-llm = ChatOpenAI(model="gpt-4o", temperature=0)
-tools = [generate_strategies, backtest_generated_strategies, evaluate_backtest, calculate_indicators, get_historical_data]
+@tool(name="generate_live_signal", description="根据实盘数据和交易策略，使用LLM生成实盘交易信号")
+def generate_live_signal(data: pd.DataFrame, strategy: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    使用LLM生成实盘交易信号
+    
+    Args:
+        data: 实盘数据，包含技术指标
+        strategy: 策略配置字典
+        
+    Returns:
+        Dict[str, Any]: 包含交易信号的字典
+    """
+    try:
+        # 获取最新的数据点
+        latest_data = data.iloc[-1]
+        
+        # 构建提示
+        prompt = f"""
+        你是一个资深量化交易员，请根据以下技术指标数据和交易策略，判断当前应该买入、卖出还是持有：
+        
+        当前价格: {latest_data['CLOSE']}
+        技术指标:
+        {json.dumps({indicator: latest_data[indicator] for indicator in strategy['indicators']}, indent=2)}
+        
+        交易策略:
+        {json.dumps(strategy, indent=2, ensure_ascii=False)}
+        
+        请只回答: BUY, SELL 或 HOLD
+        """
+        
+        # 调用LLM获取信号
+        response = llm.invoke(prompt)
+        signal = response.strip().upper()
+        
+        # 验证信号有效性
+        if signal not in ["BUY", "SELL", "HOLD"]:
+            signal = "HOLD"  # 默认持有
+            
+        # 返回信号详情
+        return signal
 
-strategy_agent = initialize_agent(
+        
+    except Exception as e:
+        logger.error(f"生成交易信号时出错: {str(e)}")
+        raise 
+
+
+# 初始化LLM和解析器
+llm = ChatOpenAI(model="gpt-4o", temperature=0.2)
+tools = [generate_strategy, backtest_strategy, evaluate_backtest, calculate_indicators, get_historical_data, generate_live_signal]
+
+quant_agent = initialize_agent(
     tools=tools,
     llm=llm,
     agent=AgentType.OPENAI_FUNCTIONS,

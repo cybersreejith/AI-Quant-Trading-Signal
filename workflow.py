@@ -15,6 +15,7 @@ from core.agents.sentiment_agent import SentimentAgent
 from datetime import datetime, timedelta
 from core.agents.report_agent import ReportAgent
 from core.backtest import evaluate_backtest
+from core.agents.Strategy_agent import quant_agent
 
 # 配置日志
 logging.basicConfig(level=logging.INFO)
@@ -29,15 +30,12 @@ class WorkflowState(TypedDict, total=False):
     # === 资产元信息 ===
     asset_type: Annotated[str, "股票 / ETF / 外汇 / 加密货币"]
     symbol:     Annotated[str, "例如 AAPL 或 BTC-USD"]
-    start_date: Annotated[str, "回测开始日期"]
-    end_date:   Annotated[str, "回测结束日期"]
 
     # === 历史行情 ===
     historical_data:   NotRequired[pd.DataFrame]         # OHLCV
     technical_data:    NotRequired[pd.DataFrame]         # 含指标的 DF
 
     # === 回测相关 ===
-    backtest_dataset:  NotRequired[pd.DataFrame]
     trading_strategy:  NotRequired[Any]                  # backtrader.Strategy
     backtest_results:  NotRequired[Dict[str, Any]]       # 指标 JSON
     backtest_evaluation: NotRequired[Dict[str, Any]]     # AI 评价
@@ -57,24 +55,18 @@ def create_workflow_graph() -> Graph:
     workflow = StateGraph(WorkflowState)
     
     # 定义节点
-    workflow.add_node("input_symbol", input_symbol_node)
-    workflow.add_node("get_date_range", get_date_range_node)
     workflow.add_node("get_historical_data", get_historical_data_node)
     workflow.add_node("calculate_indicators", calculate_indicators_node)
-    workflow.add_node("set_data", set_data_node)
     workflow.add_node("generate_trading_strategy", generate_trading_strategy_node)
-    workflow.add_node("run_backtest", run_backtest_node)
+    workflow.add_node("backtest_strategy", backtest_strategy_node)
     workflow.add_node("evaluate_backtest", evaluate_backtest_node)
     workflow.add_node("generate_live_signal", generate_live_signal_node)
     workflow.add_node("analyze_market_sentiment", analyze_market_sentiment_node)
     workflow.add_node("generate_final_report", generate_final_report_node)
     
     # 定义边
-    workflow.add_edge("input_symbol", "get_date_range")
-    workflow.add_edge("get_date_range", "get_historical_data")
     workflow.add_edge("get_historical_data", "calculate_indicators")
-    workflow.add_edge("calculate_indicators", "set_data")
-    workflow.add_edge("set_data", "generate_trading_strategy")
+    workflow.add_edge("calculate_indicators", "generate_trading_strategy")
     workflow.add_edge("generate_trading_strategy", "run_backtest")
     workflow.add_edge("run_backtest", "evaluate_backtest")
     workflow.add_conditional_edges(
@@ -95,41 +87,6 @@ def create_workflow_graph() -> Graph:
     return workflow.compile()
 
 # 节点函数定义
-def input_symbol_node(state: WorkflowState) -> WorkflowState:
-    """处理资产代码节点"""
-    try:
-        logger.info("处理资产代码")
-        
-        # 检查资产代码是否已设置
-        if not state.get('symbol'):
-            logger.error("未设置资产代码")
-            raise ValueError("未设置资产代码")
-            
-        logger.info(f"资产代码: {state['symbol']}")
-        
-        return state
-    except Exception as e:
-        logger.error(f"处理资产代码时出错: {str(e)}")
-        raise
-
-def get_date_range_node(state: WorkflowState) -> WorkflowState:
-    """获取日期范围节点"""
-    try:
-        logger.info("获取日期范围")
-        
-        # 调用日期范围获取函数
-        start_date, end_date = get_date_range()
-        
-        # 更新状态
-        state['start_date'] = start_date
-        state['end_date'] = end_date
-        logger.info(f"日期范围: {start_date} 至 {end_date}")
-        
-        return state
-    except Exception as e:
-        logger.error(f"获取日期范围时出错: {str(e)}")
-        raise
-
 def get_historical_data_node(state: WorkflowState) -> WorkflowState:
     """获取历史数据节点"""
     try:
@@ -141,19 +98,16 @@ def get_historical_data_node(state: WorkflowState) -> WorkflowState:
             raise ValueError("未选择资产代码")
             
         # 获取历史数据
-        df = get_historical_data(
-            symbol=state['symbol'],
-            start_date=state.get('start_date'),
-            end_date=state.get('end_date')
-        )
+        task = f"请获取资产 {state['symbol']}的历史行情数据"
+        historical_data = quant_agent.run(task)
         
-        if df is None:
+        if historical_data is None:
             logger.error(f"获取 {state['symbol']} 的历史数据失败")
             raise ValueError(f"获取 {state['symbol']} 的历史数据失败")
             
         # 更新状态
-        state['historical_data'] = df
-        logger.info(f"成功获取 {state['symbol']} 的历史数据，数据形状: {df.shape}")
+        state['historical_data'] = historical_data
+        logger.info(f"成功获取 {state['symbol']} 的历史数据，数据形状: {historical_data.shape}")
         
         return state
     except Exception as e:
@@ -168,52 +122,78 @@ def calculate_indicators_node(state: WorkflowState) -> WorkflowState:
         # 检查必要的状态
         if state.get('historical_data') is None:
             logger.error("未获取历史数据")
-            raise ValueError("未获取历史数据")
-            
+            raise ValueError("未获取历史数据")           
         # 计算技术指标
-        df = calculate_indicators(state['historical_data'])
+        task = f"请计算资产 {state['historical_data']}的技术指标"
+        technical_data = quant_agent.run(task)
         
-        if df is None:
+        if technical_data is None:
             logger.error("计算技术指标失败")
             raise ValueError("计算技术指标失败")
             
         # 更新状态
-        state['technical_data'] = df
-        logger.info(f"技术指标计算完成，数据形状: {df.shape}")
+        state['technical_data'] = technical_data
+        logger.info(f"技术指标计算完成，数据形状: {technical_data.shape}")
         
         return state
     except Exception as e:
         logger.error(f"计算技术指标时出错: {str(e)}")
         raise
 
-def set_data_node(state: WorkflowState) -> WorkflowState:
-    """准备回测数据集节点"""
-    try:
-        # TODO: 实现回测数据集准备逻辑
-        logger.info("准备回测数据集")
-        return state
-    except Exception as e:
-        logger.error(f"准备回测数据集时出错: {str(e)}")
-        raise
 
 def generate_trading_strategy_node(state: WorkflowState) -> WorkflowState:
     """生成交易策略节点"""
     try:
-        # TODO: 实现交易策略生成逻辑
         logger.info("生成交易策略")
+        
+        # 检查必要的状态
+        if state.get('technical_data') is None:
+            logger.error("未获取技术指标")
+            raise ValueError("未获取技术指标")           
+        # 生成交易策略
+        task = f"请生成资产 {state['symbol']}的交易策略"
+        trading_strategy = quant_agent.run(task)
+        
+        if trading_strategy is None:
+            logger.error("生成交易策略失败")
+            raise ValueError("生成交易策略失败")
+            
+        # 更新状态
+        state['trading_strategy'] = trading_strategy
+        logger.info(f"交易策略生成完成，数据形状: {trading_strategy.shape}")
+        
         return state
     except Exception as e:
         logger.error(f"生成交易策略时出错: {str(e)}")
-        raise
+        raise    
 
-def run_backtest_node(state: WorkflowState) -> WorkflowState:
+def backtest_strategy_node(state: WorkflowState) -> WorkflowState:
     """运行回测节点"""
     try:
-        # TODO: 实现回测运行逻辑
         logger.info("运行回测")
+        
+        # 检查必要的状态
+        if state.get('trading_strategy') is None:
+            logger.error("未获取交易策略")
+            raise ValueError("未获取交易策略")
+        if state.get('technical_data') is None:
+            logger.error("未获取技术指标")
+            raise ValueError("未获取技术指标")  
+        # 运行回测
+        task = f"请根据资产技术指标数据 {state['technical_data']} 和交易策略 {state['trading_strategy']} 进行回测"
+        backtest_results = quant_agent.run(task)
+        
+        if backtest_results is None:
+            logger.error("回测失败")
+            raise ValueError("回测失败")
+            
+        # 更新状态
+        state['backtest_results'] = backtest_results
+        logger.info(f"回测完成，数据形状: {backtest_results.shape}")
+        
         return state
     except Exception as e:
-        logger.error(f"运行回测时出错: {str(e)}")
+        logger.error(f"回测时出错: {str(e)}")
         raise
 
 def evaluate_backtest_node(state: WorkflowState) -> WorkflowState:
@@ -221,34 +201,22 @@ def evaluate_backtest_node(state: WorkflowState) -> WorkflowState:
     try:
         logger.info("评估回测结果")
         
-        # 检查必要的状态
+        # 检查必要数据
         if state.get('backtest_results') is None:
             logger.error("未获取回测结果")
             raise ValueError("未获取回测结果")
             
-        # 获取回测结果
-        backtest_results = state['backtest_results']
-        
         # 使用evaluate_backtest函数评估回测结果
-        evaluation = evaluate_backtest(backtest_results)
-        
-        # 添加满意度判断
-        evaluation['is_satisfactory'] = (
-            evaluation['performance_metrics']['sharpe_ratio'] > 1.0 and
-            evaluation['performance_metrics']['max_drawdown'] < 0.3 and
-            evaluation['trading_statistics']['win_rate'] > 0.5
-        )
-        
+        task = f"请根据回测结果 {state['backtest_results']} 进行评估"
+        evaluation = quant_agent.run(task)
+
+        if evaluation is None:
+            logger.error("评估回测结果失败")
+            raise ValueError("评估回测结果失败")
+            
         # 更新状态
         state['backtest_evaluation'] = evaluation
-        
-        # 记录评估结果
-        logger.info(f"回测评估完成:")
-        logger.info(f"策略名称: {evaluation['strategy_name']}")
-        logger.info(f"总体评级: {evaluation['conclusion']['overall_rating']}")
-        logger.info(f"是否满意: {'是' if evaluation['is_satisfactory'] else '否'}")
-        logger.info(f"优势: {', '.join(evaluation['conclusion']['strengths'])}")
-        logger.info(f"劣势: {', '.join(evaluation['conclusion']['weaknesses'])}")
+        logger.info(f"评估回测结果完成: {evaluation}")
         
         return state
     except Exception as e:
@@ -258,48 +226,27 @@ def evaluate_backtest_node(state: WorkflowState) -> WorkflowState:
 def generate_live_signal_node(state: WorkflowState) -> WorkflowState:
     """生成实时交易信号节点"""
     try:
-        logger.info("开始生成实时交易信号")
+        logger.info("生成实时交易信号")
         
         # 检查必要数据
-        if not state.get('symbol') or not state.get('trading_strategy'):
-            logger.error("缺少必要数据：资产代码或交易策略")
-            raise ValueError("缺少必要数据：资产代码或交易策略")
-            
-        # 获取最新的历史数据
-        latest_data = get_historical_data(
-            symbol=state['symbol'],
-            start_date=(datetime.now() - timedelta(days=30)).strftime('%Y-%m-%d'),
-            end_date=datetime.now().strftime('%Y-%m-%d')
-        )
-        
-        if latest_data is None or latest_data.empty:
-            logger.error("获取最新数据失败")
-            raise ValueError("获取最新数据失败")
-            
-        # 计算技术指标
-        latest_data_with_indicators = calculate_indicators(latest_data)
-        
-        # 使用交易策略生成信号
-        signal = state['trading_strategy'].generate_signal(latest_data_with_indicators)
-        
-        # 更新工作流状态
-        state['live_signal'] = {
-            "signal": signal,
-            "timestamp": datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
-            "price": latest_data_with_indicators['Close'].iloc[-1],
-            "indicators": {
-                "RSI": latest_data_with_indicators['RSI'].iloc[-1],
-                "MACD": latest_data_with_indicators['MACD'].iloc[-1],
-                "BB_Upper": latest_data_with_indicators['BB_Upper'].iloc[-1],
-                "BB_Lower": latest_data_with_indicators['BB_Lower'].iloc[-1]
-            }
-        }
-        
-        logger.info(f"实时信号生成完成: {signal}")
+        if state.get('trading_strategy') is None:
+            logger.error("未获取交易策略")
+            raise ValueError("未获取交易策略")
+        if state.get('technical_data') is None:
+            logger.error("未获取技术指标")
+            raise ValueError("未获取技术指标")
+        # 生成实时交易信号
+        task = f"请根据资产技术指标数据 {state['technical_data']} 和交易策略 {state['trading_strategy']} 生成实时交易信号"
+        live_signal = quant_agent.run(task)
+        if live_signal is None:
+            logger.error("生成实时交易信号失败")
+            raise ValueError("生成实时交易信号失败")
+        # 更新状态
+        state['live_signal'] = live_signal
+        logger.info(f"实时交易信号生成完成: {live_signal}")
         return state
-        
     except Exception as e:
-        logger.error(f"生成实时信号时出错: {str(e)}")
+        logger.error(f"生成实时交易信号时出错: {str(e)}")
         raise
 
 def analyze_market_sentiment_node(state: WorkflowState) -> WorkflowState:
@@ -318,22 +265,9 @@ def analyze_market_sentiment_node(state: WorkflowState) -> WorkflowState:
         # 分析市场情绪
         sentiment_result = sentiment_agent.analyze_market_sentiment(state['symbol'])
         
-        # 检查分析结果
-        if "error" in sentiment_result:
-            logger.error(f"市场情绪分析失败: {sentiment_result['error']}")
-            raise ValueError(f"市场情绪分析失败: {sentiment_result['error']}")
-            
-        # 更新工作流状态
-        state['sentiment_analysis'] = {
-            "overall_sentiment": sentiment_result["overall_sentiment"],
-            "sentiment_score": sentiment_result["sentiment_score"],
-            "key_points": sentiment_result["key_points"],
-            "confidence": sentiment_result["confidence"],
-            "news_summary": sentiment_result["news_summary"]
-        }
-        
-        # 记录分析结果
-        logger.info(f"市场情绪分析完成: {sentiment_result['overall_sentiment']} (得分: {sentiment_result['sentiment_score']})")
+        # 更新状态
+        state['sentiment_analysis'] = sentiment_result
+        logger.info(f"市场情绪分析完成: {sentiment_result}")
         
         return state
         
@@ -388,13 +322,9 @@ if __name__ == "__main__":
     # 初始化状态
     initial_state = WorkflowState(
         messages=[],
-        asset_type="",  # 由前端传入
         symbol="",      # 由前端传入
-        start_date="",
-        end_date="",
         historical_data=None,
         technical_data=None,
-        backtest_dataset=None,
         trading_strategy=None,
         backtest_results=None,
         backtest_evaluation={"is_satisfactory": False},

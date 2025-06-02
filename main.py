@@ -30,11 +30,8 @@ def analyze():
         initial_state = WorkflowState(
             messages=[],
             symbol=symbol,
-            start_date="",
-            end_date="",
             historical_data=None,
             technical_data=None,
-            backtest_dataset=None,
             trading_strategy=None,
             backtest_results=None,
             backtest_evaluation={"is_satisfactory": False},

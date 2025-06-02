@@ -7,7 +7,7 @@ import backtrader as bt
 from langchain.agents import tool
 import pandas as pd
 import numpy as np
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Union
 from datetime import datetime
 from utils.logger import setup_logger
 from config.settings import (
@@ -15,6 +15,7 @@ from config.settings import (
     COMMISSION_RATE
 )
 from core.agents.Strategy_agent import generate_strategies
+import json
 
 logger = setup_logger(__name__)
 
@@ -141,15 +142,17 @@ class BacktestEngine:
             'equity_curve': strat.analyzers.returns.get_analysis()
         }
 
-def backtest_strategy(strategy: Dict[str, Any], 
-                     data: pd.DataFrame,
-                     initial_capital: float = 100000.0) -> Dict[str, Any]:
+
+@tool(name="backtest_strategy", description="回测交易策略")
+def backtest_strategy(data: pd.DataFrame,
+                       strategy: Dict[str, Any],
+                       initial_capital: float = 100000.0) -> Dict[str, Any]:
     """
-    回测单个策略
+    回测单个交易策略
     
     Args:
-        strategy: 策略配置字典
         data: 回测数据
+        strategy: 策略配置字典
         initial_capital: 初始资金
         
     Returns:
@@ -160,49 +163,7 @@ def backtest_strategy(strategy: Dict[str, Any],
     engine.add_strategy(strategy)
     return engine.run_backtest()
 
-def backtest_strategies(strategies: List[Dict[str, Any]],
-                       data: pd.DataFrame,
-                       initial_capital: float = 100000.0) -> List[Dict[str, Any]]:
-    """
-    回测多个策略
-    
-    Args:
-        strategies: 策略配置列表
-        data: 回测数据
-        initial_capital: 初始资金
-        
-    Returns:
-        List[Dict[str, Any]]: 回测结果列表
-    """
-    results = []
-    for strategy in strategies:
-        result = backtest_strategy(strategy, data, initial_capital)
-        results.append(result)
-    return results
-@tool
-def backtest_generated_strategies(data: pd.DataFrame,
-                                n_strategies: int = 3,
-                                initial_capital: float = 100000.0) -> List[Dict[str, Any]]:
-    """
-    回测由 generate_strategies 生成的策略
-    
-    Args:
-        data: 回测数据
-        n_strategies: 要生成的策略数量
-        initial_capital: 初始资金
-        
-    Returns:
-        List[Dict[str, Any]]: 回测结果列表
-    """
-    # 生成策略
-    strategies = generate_strategies(n=n_strategies)
-    
-    # 回测策略
-    results = backtest_strategies(strategies, data, initial_capital)
-    
-    return results
-
-@tool
+@tool(name="evaluate_backtest", description="评估策略回测结果并生成性能分析报告")
 def evaluate_backtest(backtest_results: Dict[str, Any]) -> Dict[str, Any]:
     """
     评估回测效果，生成详细的性能分析报告
@@ -294,4 +255,4 @@ def evaluate_backtest(backtest_results: Dict[str, Any]) -> Dict[str, Any]:
     if max_drawdown > 0.3:
         evaluation_report['conclusion']['weaknesses'].append('回撤较大')
     
-    return evaluation_report 
+    return evaluation_report
