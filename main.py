@@ -42,16 +42,31 @@ def analyze():
         
         # 运行工作流
         final_state = workflow_graph.invoke(initial_state)
-        
-        # 返回分析结果
+
+        # 调试输出：打印 final_state 内容和类型
+        print('final_state:', final_state)
+        for k, v in final_state.items():
+            print(f"字段: {k}, 类型: {type(v)}, 值: {v}")
+
+        # 处理返回数据，确保可序列化
+        def safe(obj):
+            if hasattr(obj, 'to_dict'):
+                return obj.to_dict()
+            elif hasattr(obj, 'to_json'):
+                return obj.to_json()
+            elif isinstance(obj, (list, dict, str, int, float, bool)) or obj is None:
+                return obj
+            else:
+                return str(obj)
+
         return jsonify({
             'status': 'success',
             'data': {
-                'backtest_results': final_state.get('backtest_results'),
-                'backtest_evaluation': final_state.get('backtest_evaluation'),
-                'live_signal': final_state.get('live_signal'),
-                'sentiment_analysis': final_state.get('sentiment_analysis'),
-                'final_report': final_state.get('final_report')
+                'backtest_results': safe(final_state.get('backtest_results')),
+                'backtest_evaluation': safe(final_state.get('backtest_evaluation')),
+                'live_signal': safe(final_state.get('live_signal')),
+                'sentiment_analysis': safe(final_state.get('sentiment_analysis')),
+                'final_report': safe(final_state.get('final_report'))
             }
         })
         

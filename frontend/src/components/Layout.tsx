@@ -8,16 +8,16 @@ const Layout: React.FC = () => {
   const navigate = useNavigate();
 
   const menuItems = [
-    { key: '/', label: '首页' },
-    { key: '/trading', label: '交易' },
-    { key: '/report', label: '报告' },
+    { key: '/', label: 'Home page' },
+    { key: '/trading', label: 'Trading' },
+    { key: '/report', label: 'Report' },
   ];
 
   return (
     <AntLayout style={{ minHeight: '100vh' }}>
       <Header>
         <div style={{ float: 'left', color: 'white', fontSize: '18px', marginRight: '24px' }}>
-          AI量化交易信号系统
+          AI Quantitative Trading Signal System
         </div>
         <Menu
           theme="dark"

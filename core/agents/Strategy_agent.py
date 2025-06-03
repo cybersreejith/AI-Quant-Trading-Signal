@@ -4,10 +4,9 @@
 """
 
 from langchain.prompts import ChatPromptTemplate
-from langchain.output_parsers import JsonOutputParser
+from langchain_core.output_parsers import JsonOutputParser
 from langchain.chat_models.openai import ChatOpenAI
 from langchain.agents import tool, Tool, initialize_agent, AgentType
-from core.backtest import backtest_strategy, evaluate_backtest
 from core.indicators import calculate_indicators, get_historical_data
 import json
 import textwrap
@@ -176,7 +175,7 @@ def build_prompt(indicator_meta: dict,
         [("system", system_part), ("user", user_part)]
     )
 
-@tool(name="generate_strategy", description="根据指标元数据，生成一个交易策略（包括规则、指标、参数等）")
+@tool("根据指标元数据，生成一个交易策略（包括规则、指标、参数等）")
 def generate_strategy() -> dict:
     """
     生成单个交易策略
@@ -196,7 +195,7 @@ def generate_strategy() -> dict:
     spec_list = chain.invoke({})
     return spec_list[0]  # 只返回第一个策略
 
-@tool(name="generate_live_signal", description="根据实盘数据和交易策略，使用LLM生成实盘交易信号")
+@tool("根据实盘数据和交易策略，使用LLM生成实盘交易信号")
 def generate_live_signal(data: pd.DataFrame, strategy: Dict[str, Any]) -> Dict[str, Any]:
     """
     使用LLM生成实盘交易信号
@@ -236,19 +235,20 @@ def generate_live_signal(data: pd.DataFrame, strategy: Dict[str, Any]) -> Dict[s
             
         # 返回信号详情
         return signal
-
         
     except Exception as e:
         logger.error(f"生成交易信号时出错: {str(e)}")
         raise 
 
-
 # 初始化LLM和解析器
-llm = ChatOpenAI(model="gpt-4o", temperature=0.2)
-tools = [generate_strategy, backtest_strategy, evaluate_backtest, calculate_indicators, get_historical_data, generate_live_signal]
+llm = ChatOpenAI(model="gpt-4", temperature=0.2)
+
+def get_tools():
+    from core.backtest import backtest_strategy, evaluate_backtest
+    return [generate_strategy, backtest_strategy, evaluate_backtest, calculate_indicators, get_historical_data, generate_live_signal]
 
 quant_agent = initialize_agent(
-    tools=tools,
+    tools=get_tools(),
     llm=llm,
     agent=AgentType.OPENAI_FUNCTIONS,
     verbose=True

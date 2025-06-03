@@ -3,13 +3,6 @@ from langgraph.graph import Graph, StateGraph
 from langchain_core.messages import BaseMessage, HumanMessage, AIMessage
 import pandas as pd
 import logging
-from AI_Quant_Trading import (
-    select_asset_type_menu,
-    display_asset_reference_list,
-    input_asset_symbol,
-    get_date_range,
-    get_historical_data
-)
 from core.indicators import calculate_indicators
 from core.agents.sentiment_agent import SentimentAgent
 from datetime import datetime, timedelta
@@ -21,6 +14,33 @@ from core.agents.Strategy_agent import quant_agent
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+def safe_serialize(obj):
+    """安全序列化对象为基本类型"""
+    print('safe_serialize 调试类型:', type(obj))
+    print('safe_serialize 调试内容:', obj)
+    
+    if isinstance(obj, pd.DataFrame):
+        return obj.to_dict(orient='records')
+    elif hasattr(obj, 'to_dict'):
+        try:
+            return obj.to_dict()
+        except Exception as e:
+            print(f"to_dict 转换失败: {str(e)}")
+            return str(obj)
+    elif hasattr(obj, 'to_json'):
+        try:
+            return obj.to_json()
+        except Exception as e:
+            print(f"to_json 转换失败: {str(e)}")
+            return str(obj)
+    elif isinstance(obj, (list, dict, str, int, float, bool)) or obj is None:
+        return obj
+    elif hasattr(obj, '__dict__'):
+        return obj.__dict__
+    else:
+        print(f"无法序列化的类型: {type(obj)}")
+        return str(obj)
+
 class WorkflowState(TypedDict, total=False):
     """量化交易工作流的共享状态"""
 
@@ -28,15 +48,14 @@ class WorkflowState(TypedDict, total=False):
     messages: Annotated[Sequence[BaseMessage], "对话历史"]
 
     # === 资产元信息 ===
-    asset_type: Annotated[str, "股票 / ETF / 外汇 / 加密货币"]
     symbol:     Annotated[str, "例如 AAPL 或 BTC-USD"]
 
     # === 历史行情 ===
-    historical_data:   NotRequired[pd.DataFrame]         # OHLCV
-    technical_data:    NotRequired[pd.DataFrame]         # 含指标的 DF
+    historical_data:   NotRequired[Dict[str, Any]]         # OHLCV
+    technical_data:    NotRequired[Dict[str, Any]]         # 含指标的 DF
 
     # === 回测相关 ===
-    trading_strategy:  NotRequired[Any]                  # backtrader.Strategy
+    trading_strategy:  NotRequired[Dict[str, Any]]                  # backtrader.Strategy
     backtest_results:  NotRequired[Dict[str, Any]]       # 指标 JSON
     backtest_evaluation: NotRequired[Dict[str, Any]]     # AI 评价
 
@@ -67,8 +86,8 @@ def create_workflow_graph() -> Graph:
     # 定义边
     workflow.add_edge("get_historical_data", "calculate_indicators")
     workflow.add_edge("calculate_indicators", "generate_trading_strategy")
-    workflow.add_edge("generate_trading_strategy", "run_backtest")
-    workflow.add_edge("run_backtest", "evaluate_backtest")
+    workflow.add_edge("generate_trading_strategy", "backtest_strategy")
+    workflow.add_edge("backtest_strategy", "evaluate_backtest")
     workflow.add_conditional_edges(
         "evaluate_backtest",
         lambda x: "generate_trading_strategy" if not x["backtest_evaluation"]["is_satisfactory"] else "generate_live_signal",
@@ -81,7 +100,7 @@ def create_workflow_graph() -> Graph:
     workflow.add_edge("analyze_market_sentiment", "generate_final_report")
     
     # 设置入口和出口
-    workflow.set_entry_point("input_symbol")
+    workflow.set_entry_point("get_historical_data")
     workflow.set_finish_point("generate_final_report")
     
     return workflow.compile()
@@ -91,6 +110,7 @@ def get_historical_data_node(state: WorkflowState) -> WorkflowState:
     """获取历史数据节点"""
     try:
         logger.info("获取历史数据")
+        print("=== 开始获取历史数据 ===")
         
         # 检查必要的状态
         if not state.get('symbol'):
@@ -99,19 +119,36 @@ def get_historical_data_node(state: WorkflowState) -> WorkflowState:
             
         # 获取历史数据
         task = f"请获取资产 {state['symbol']}的历史行情数据"
-        historical_data = quant_agent.run(task)
+        print(f"执行任务: {task}")
+        
+        try:
+            # 使用 invoke 替代 run
+            historical_data = quant_agent.invoke({"input": task})
+            print("quant_agent.invoke 返回类型:", type(historical_data))
+            print("quant_agent.invoke 返回内容:", historical_data)
+        except Exception as e:
+            print(f"quant_agent.invoke 执行出错: {str(e)}")
+            raise
         
         if historical_data is None:
             logger.error(f"获取 {state['symbol']} 的历史数据失败")
             raise ValueError(f"获取 {state['symbol']} 的历史数据失败")
             
-        # 更新状态
-        state['historical_data'] = historical_data
-        logger.info(f"成功获取 {state['symbol']} 的历史数据，数据形状: {historical_data.shape}")
+        # 更新状态 - 确保数据可序列化
+        if isinstance(historical_data, pd.DataFrame):
+            print("转换 DataFrame 为 dict")
+            state['historical_data'] = historical_data.to_dict(orient='records')
+        else:
+            print("使用 safe_serialize 处理数据")
+            state['historical_data'] = safe_serialize(historical_data)
+            
+        logger.info(f"成功获取 {state['symbol']} 的历史数据")
+        print("=== 历史数据获取完成 ===")
         
         return state
     except Exception as e:
         logger.error(f"获取历史数据时出错: {str(e)}")
+        print(f"获取历史数据时出错: {str(e)}")
         raise
 
 def calculate_indicators_node(state: WorkflowState) -> WorkflowState:
@@ -132,8 +169,8 @@ def calculate_indicators_node(state: WorkflowState) -> WorkflowState:
             raise ValueError("计算技术指标失败")
             
         # 更新状态
-        state['technical_data'] = technical_data
-        logger.info(f"技术指标计算完成，数据形状: {technical_data.shape}")
+        state['technical_data'] = safe_serialize(technical_data)
+        logger.info("技术指标计算完成")
         
         return state
     except Exception as e:
@@ -159,8 +196,8 @@ def generate_trading_strategy_node(state: WorkflowState) -> WorkflowState:
             raise ValueError("生成交易策略失败")
             
         # 更新状态
-        state['trading_strategy'] = trading_strategy
-        logger.info(f"交易策略生成完成，数据形状: {trading_strategy.shape}")
+        state['trading_strategy'] = safe_serialize(trading_strategy)
+        logger.info("交易策略生成完成")
         
         return state
     except Exception as e:
@@ -188,8 +225,8 @@ def backtest_strategy_node(state: WorkflowState) -> WorkflowState:
             raise ValueError("回测失败")
             
         # 更新状态
-        state['backtest_results'] = backtest_results
-        logger.info(f"回测完成，数据形状: {backtest_results.shape}")
+        state['backtest_results'] = safe_serialize(backtest_results)
+        logger.info("回测完成")
         
         return state
     except Exception as e:
@@ -205,19 +242,17 @@ def evaluate_backtest_node(state: WorkflowState) -> WorkflowState:
         if state.get('backtest_results') is None:
             logger.error("未获取回测结果")
             raise ValueError("未获取回测结果")
-            
-        # 使用evaluate_backtest函数评估回测结果
+        # 使用quant_agent.run评估回测结果
         task = f"请根据回测结果 {state['backtest_results']} 进行评估"
         evaluation = quant_agent.run(task)
-
         if evaluation is None:
             logger.error("评估回测结果失败")
             raise ValueError("评估回测结果失败")
-            
         # 更新状态
-        state['backtest_evaluation'] = evaluation
-        logger.info(f"评估回测结果完成: {evaluation}")
-        
+        print('evaluate_backtest_node 调用 safe_serialize 前 evaluation 类型:', type(evaluation))
+        print('evaluate_backtest_node 调用 safe_serialize 前 evaluation 内容:', evaluation)
+        state['backtest_evaluation'] = safe_serialize(evaluation)
+        logger.info("回测评估完成")
         return state
     except Exception as e:
         logger.error(f"评估回测结果时出错: {str(e)}")
@@ -242,7 +277,7 @@ def generate_live_signal_node(state: WorkflowState) -> WorkflowState:
             logger.error("生成实时交易信号失败")
             raise ValueError("生成实时交易信号失败")
         # 更新状态
-        state['live_signal'] = live_signal
+        state['live_signal'] = safe_serialize(live_signal)
         logger.info(f"实时交易信号生成完成: {live_signal}")
         return state
     except Exception as e:
@@ -266,7 +301,7 @@ def analyze_market_sentiment_node(state: WorkflowState) -> WorkflowState:
         sentiment_result = sentiment_agent.analyze_market_sentiment(state['symbol'])
         
         # 更新状态
-        state['sentiment_analysis'] = sentiment_result
+        state['sentiment_analysis'] = safe_serialize(sentiment_result)
         logger.info(f"市场情绪分析完成: {sentiment_result}")
         
         return state

@@ -9,7 +9,7 @@ from utils.logger import setup_logger
 from langchain.agents import tool
 logger = setup_logger(__name__)
 
-@tool(name="get_historical_data", description="获取资产的历史数据")
+@tool("获取资产的历史数据")
 def get_historical_data(symbol: str) -> Optional[pd.DataFrame]:
     """
     获取资产的历史数据，默认从当前时间往前推 1 年。    
@@ -53,7 +53,7 @@ def get_historical_data(symbol: str) -> Optional[pd.DataFrame]:
         logging.error(f"获取 {symbol} 的历史数据时出错: {str(e)}")
         return None
 
-@tool(name="calculate_indicators", description="计算所有技术指标")
+@tool("计算所有技术指标")
 def calculate_indicators(data: pd.DataFrame) -> pd.DataFrame:
     """
     计算所有技术指标

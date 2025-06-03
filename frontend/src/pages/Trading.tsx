@@ -12,10 +12,10 @@ const Trading: React.FC = () => {
   const [showAssetList, setShowAssetList] = useState<boolean>(false);
 
   const assetTypes = [
-    { value: 'stock', label: '全球股票' },
+    { value: 'stock', label: 'Global Stock' },
     { value: 'etf', label: 'ETF' },
-    { value: 'forex', label: '外汇' },
-    { value: 'crypto', label: '加密货币' },
+    { value: 'forex', label: 'Forex' },
+    { value: 'crypto', label: 'Crypto' },
   ];
 
   const assetLists = {
@@ -55,17 +55,17 @@ const Trading: React.FC = () => {
   const handleSubmit = async () => {
     try {
       if (!assetType) {
-        message.warning('请选择资产类型');
+        message.warning('Please select asset type');
         return;
       }
       if (!symbol) {
-        message.warning('请输入交易对');
+        message.warning('Please input asset code');
         return;
       }
       // TODO: 调用后端 API
-      message.success('交易信号生成中...');
+      message.success('Generating trading signal...');
     } catch (error) {
-      message.error('操作失败，请重试');
+      message.error('Operation failed, please try again');
     }
   };
 
@@ -79,15 +79,15 @@ const Trading: React.FC = () => {
             onClick={() => navigate('/')}
             style={{ marginRight: 16 }}
           >
-            返回
+            Back
           </Button>
-          <span>交易信号生成</span>
+          <span>Generate Trading Signal</span>
         </div>
       }
     >
       <div style={{ marginBottom: 24 }}>
         <div style={{ marginBottom: 16 }}>
-          <h3>请选择资产类型：</h3>
+          <h3>Please select asset type:</h3>
           <Radio.Group
             value={assetType}
             onChange={e => handleAssetTypeChange(e.target.value)}
@@ -114,10 +114,10 @@ const Trading: React.FC = () => {
         </div>
 
         <div style={{ marginBottom: 16 }}>
-          <h3>请输入交易对：</h3>
+          <h3>Please input asset code:</h3>
           <Input
             style={{ width: '100%' }}
-            placeholder="例如：BTC-USD, AAPL, EURUSD=X"
+            placeholder="For example: BTC-USD, AAPL, EURUSD=X"
             value={symbol}
             onChange={e => setSymbol(e.target.value)}
           />
@@ -125,7 +125,7 @@ const Trading: React.FC = () => {
 
         {showAssetList && assetType && (
           <div style={{ marginBottom: 16 }}>
-            <h3>参考资产列表：</h3>
+            <h3>Asset reference list:</h3>
             <List
               grid={{ gutter: 16, column: 4 }}
               dataSource={assetLists[assetType as keyof typeof assetLists]}
@@ -154,16 +154,16 @@ const Trading: React.FC = () => {
           onClick={handleSubmit}
           style={{ width: '100%', height: '40px' }}
         >
-          生成信号
+          Generate Signal
         </Button>
       </div>
 
       <Table
         columns={[
-          { title: '交易对', dataIndex: 'symbol' },
-          { title: '信号类型', dataIndex: 'signalType' },
-          { title: '生成时间', dataIndex: 'timestamp' },
-          { title: '建议操作', dataIndex: 'action' },
+          { title: 'Asset Code', dataIndex: 'symbol' },
+          { title: 'Signal Type', dataIndex: 'signalType' },
+          { title: 'Timestamp', dataIndex: 'timestamp' },
+          { title: 'Action', dataIndex: 'action' },
         ]}
         dataSource={[]}
       />

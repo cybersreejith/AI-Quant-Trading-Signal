@@ -14,7 +14,6 @@ from config.settings import (
     INITIAL_CAPITAL,
     COMMISSION_RATE
 )
-from core.agents.Strategy_agent import generate_strategies
 import json
 
 logger = setup_logger(__name__)
@@ -143,7 +142,7 @@ class BacktestEngine:
         }
 
 
-@tool(name="backtest_strategy", description="回测交易策略")
+@tool("回测交易策略")
 def backtest_strategy(data: pd.DataFrame,
                        strategy: Dict[str, Any],
                        initial_capital: float = 100000.0) -> Dict[str, Any]:
@@ -163,7 +162,7 @@ def backtest_strategy(data: pd.DataFrame,
     engine.add_strategy(strategy)
     return engine.run_backtest()
 
-@tool(name="evaluate_backtest", description="评估策略回测结果并生成性能分析报告")
+@tool("评估策略回测结果并生成性能分析报告")
 def evaluate_backtest(backtest_results: Dict[str, Any]) -> Dict[str, Any]:
     """
     评估回测效果，生成详细的性能分析报告
