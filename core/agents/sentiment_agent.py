@@ -16,44 +16,44 @@ from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.vectorstores import FAISS
 from langchain.embeddings import OpenAIEmbeddings
 
-# 加载环境变量
+# Load environment variables
 load_dotenv()
 
-# 配置日志
+# Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# 获取API key
+# Get API key
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 if not OPENAI_API_KEY:
-    logger.error("未找到 OPENAI_API_KEY，请确保.env文件已正确配置")
-    raise ValueError("未找到 OPENAI_API_KEY，请确保.env文件已正确配置")
+    logger.error("OPENAI_API_KEY not found, please make sure your .env file is configured correctly")
+    raise ValueError("OPENAI_API_KEY not found, please make sure your .env file is configured correctly")
 
 class NewsArticle(BaseModel):
-    """新闻文章模型"""
-    title: str = Field(description="新闻标题")
-    source: str = Field(description="新闻来源")
-    date: str = Field(description="发布日期")
-    summary: str = Field(description="新闻摘要")
-    url: str = Field(description="新闻链接")
+    """News article model"""
+    title: str = Field(description="News title")
+    source: str = Field(description="News source")
+    date: str = Field(description="Publication date")
+    summary: str = Field(description="News summary")
+    url: str = Field(description="News link")
 
 class SentimentAnalysis(BaseModel):
-    """市场情绪分析结果模型"""
-    overall_sentiment: str = Field(description="整体市场情绪：积极/中性/消极")
-    sentiment_score: float = Field(description="情绪得分，范围-1到1")
-    key_points: List[str] = Field(description="关键点分析")
-    confidence: float = Field(description="分析置信度，范围0到1")
-    news_summary: str = Field(description="新闻内容总结")
+    """Market sentiment analysis result model"""
+    overall_sentiment: str = Field(description="Overall market sentiment: positive/neutral/negative")
+    sentiment_score: float = Field(description="Sentiment score, range -1 to 1")
+    key_points: List[str] = Field(description="Key points analysis")
+    confidence: float = Field(description="Analysis confidence, range 0 to 1")
+    news_summary: str = Field(description="News content summary")
 
 class SentimentAgent:
-    """市场情绪分析AI agent"""
+    """Market sentiment analysis AI agent"""
     
     def __init__(self, model_name: str = "gpt-4"):
         """
-        初始化市场情绪分析AI agent
+        Initialize the market sentiment analysis AI agent
         
         Args:
-            model_name: 使用的模型名称
+            model_name: The name of the model used
         """
         self.model = ChatOpenAI(
             model_name=model_name,
@@ -64,46 +64,46 @@ class SentimentAgent:
         self.vector_store = None
         
     def _setup_prompts(self) -> None:
-        """设置提示模板"""
-        # 新闻分析提示模板
+        """Set the prompt template"""
+        # News analysis prompt template
         self.news_analysis_prompt = ChatPromptTemplate.from_messages([
-            ("system", """你是一个专业的市场情绪分析师。请结合以下背景材料和新闻内容，提取关键信息并评估市场情绪。
-            输出包括：
-            1. 整体市场情绪（积极/中性/消极）
-            2. 情绪得分（-1到1）
-            3. 关键点分析（列表形式）
-            4. 分析置信度（0到1）
-            5. 新闻内容总结（200字以内）"""),
-            ("user", "【背景材料】\n{extra_context}\n\n【新闻内容】\n{news_content}")
+            ("system", """You are a professional market sentiment analyst. Please combine the following background material and news content to extract key information and evaluate market sentiment.
+            Output includes:
+            1. Overall market sentiment (positive/neutral/negative)
+            2. Sentiment score (-1 to 1)
+            3. Key points analysis (list form)
+            4. Analysis confidence (0 to 1)
+            5. News content summary (within 200 words)"""),
+            ("user", "【Background information】\n{extra_context}\n\n【News content】\n{news_content}")
         ])
         
-        # 输出解析器
+        # Output parser
         self.output_parser = PydanticOutputParser(pydantic_object=SentimentAnalysis)
         
     def _fetch_news(self, symbol: str, days: int = 7) -> List[Dict[str, Any]]:
         """
-        获取资产相关新闻
+        Get asset-related news
         
         Args:
-            symbol: 资产代码
-            days: 获取最近几天的新闻
+            symbol: Asset code
+            days: Get the news of the past few days
             
         Returns:
-            新闻列表
+            News list
         """
         try:
-            # 使用 yfinance 获取新闻
+            # Get news using yfinance
             ticker = yf.Ticker(symbol)
             news = ticker.news
             
-            # 格式化新闻数据
+            # Format news data
             formatted_articles = []
             for article in news:
-                # 转换时间戳为日期字符串
+                # Convert timestamp to date string
                 date = datetime.fromtimestamp(article['providerPublishTime']).strftime('%Y-%m-%d %H:%M:%S')
                 url = article['link']
                 
-                # 获取正文内容
+                # Get the full text content
                 full_text = ""
                 try:
                     r = requests.get(url, timeout=5)
@@ -111,7 +111,7 @@ class SentimentAgent:
                     paragraphs = soup.find_all("p")
                     full_text = "\n".join(p.get_text() for p in paragraphs if p.get_text())
                 except Exception as e:
-                    logger.warning(f"抓取正文失败: {e}")   
+                    logger.warning(f"Failed to fetch body: {e}")   
 
                 formatted_articles.append({
                     "title": article['title'],
@@ -125,30 +125,30 @@ class SentimentAgent:
             return formatted_articles
             
         except Exception as e:
-            logger.error(f"获取新闻时出错: {str(e)}")
+            logger.error(f"Error getting news: {str(e)}")
             return []
             
     def _analyze_news(self, articles: List[Dict[str, Any]]) -> Dict[str, Any]:
         """
-        分析新闻内容
+        Analyze news content
         
         Args:
-            articles: 新闻文章列表
+            articles: News article list
             
         Returns:
-            分析结果
+            Analysis result
         """
         try:
-            # 合并新闻内容
+            # Merge news content
             news_content = "\n\n".join([
-                f"标题: {article['title']}\n"
-                f"来源: {article['source']}\n"
-                f"日期: {article['date']}\n"
-                f"摘要: {article['summary']}\n"
-                f"正文: {article['content'][:500]}\n"
+                f"Title: {article['title']}\n"
+                f"Source: {article['source']}\n"
+                f"Date: {article['date']}\n"
+                f"Summary: {article['summary']}\n"
+                f"Content: {article['content'][:500]}\n"
                 for article in articles
             ])
-            # 初始化向量库
+            # Initialize vector store
             if not self.vector_store:
                 docs = [
                     Document(page_content=article["content"] or article["summary"], metadata={"title": article["title"]})
@@ -162,14 +162,14 @@ class SentimentAgent:
             results = self.vector_store.similarity_search(query, k=3)
             extra_context = "\n\n".join([doc.page_content for doc in results])            
             
-            # 调用模型分析
+            # Call model analysis
             response = self.model.predict(
                 self.news_analysis_prompt.format(
                     news_content=news_content,
                     extra_context=extra_context)
             )
             
-            # 解析输出
+            # Parse output
             analysis = self.output_parser.parse(response)
             
             return {
@@ -182,40 +182,40 @@ class SentimentAgent:
             }
             
         except Exception as e:
-            logger.error(f"分析新闻时出错: {str(e)}")
+            logger.error(f"Error analyzing news: {str(e)}")
             return {
                 "error": str(e)
             }
             
     def analyze_market_sentiment(self, symbol: str) -> Dict[str, Any]:
         """
-        分析市场情绪
+        Analyze market sentiment
         
         Args:
-            symbol: 资产代码
+            symbol: Asset code
             
         Returns:
-            市场情绪分析结果
+            Market sentiment analysis result
         """
         try:
-            logger.info(f"开始分析 {symbol} 的市场情绪")
+            logger.info(f"Starting to analyze market sentiment for {symbol}")
             
-            # 获取新闻
+            # Get news
             articles = self._fetch_news(symbol)
             if not articles:
-                logger.warning(f"未找到 {symbol} 的相关新闻")
+                logger.warning(f"No news found for {symbol}")
                 return {
-                    "error": "未找到相关新闻"
+                    "error": "No news found"
                 }
                 
-            # 分析新闻
+            # Analyze news
             result = self._analyze_news(articles)
             
-            logger.info(f"{symbol} 的市场情绪分析完成")
+            logger.info(f"Market sentiment analysis for {symbol} completed")
             return result
             
         except Exception as e:
-            logger.error(f"分析市场情绪时出错: {str(e)}")
+            logger.error(f"Error analyzing market sentiment: {str(e)}")
             return {
                 "error": str(e)
             } 

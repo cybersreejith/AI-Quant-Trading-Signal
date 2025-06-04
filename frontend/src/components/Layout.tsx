@@ -8,7 +8,7 @@ const Layout: React.FC = () => {
   const navigate = useNavigate();
 
   const menuItems = [
-    { key: '/', label: 'Home page' },
+    { key: '/', label: 'Home' },
     { key: '/trading', label: 'Trading' },
     { key: '/report', label: 'Report' },
   ];

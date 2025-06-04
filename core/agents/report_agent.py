@@ -8,38 +8,38 @@ from langchain.output_parsers import PydanticOutputParser
 from pydantic import BaseModel, Field
 from datetime import datetime
 
-# 加载环境变量
+# Load environment variables
 load_dotenv()
 
-# 配置日志
+# Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# 获取API key
+# Get API key
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 if not OPENAI_API_KEY:
-    logger.error("未找到 OPENAI_API_KEY，请确保.env文件已正确配置")
-    raise ValueError("未找到 OPENAI_API_KEY，请确保.env文件已正确配置")
+    logger.error("OPENAI_API_KEY not found, please make sure your .env file is configured correctly")
+    raise ValueError("OPENAI_API_KEY not found, please make sure your .env file is configured correctly")
 
 class TradingReport(BaseModel):
-    """交易分析报告模型"""
-    summary: str = Field(description="报告摘要")
-    backtest_analysis: Dict[str, Any] = Field(description="回测结果分析")
-    live_signal_analysis: Dict[str, Any] = Field(description="实时信号分析")
-    sentiment_analysis: Dict[str, Any] = Field(description="市场情绪分析")
-    recommendations: List[str] = Field(description="交易建议")
-    risk_assessment: Dict[str, Any] = Field(description="风险评估")
-    confidence_score: float = Field(description="整体分析置信度")
+    """Trading analysis report model"""
+    summary: str = Field(description="Report summary")
+    backtest_analysis: Dict[str, Any] = Field(description="Backtest result analysis")
+    live_signal_analysis: Dict[str, Any] = Field(description="Live signal analysis")
+    sentiment_analysis: Dict[str, Any] = Field(description="Market sentiment analysis")
+    recommendations: List[str] = Field(description="Trading recommendations")
+    risk_assessment: Dict[str, Any] = Field(description="Risk assessment")
+    confidence_score: float = Field(description="Overall analysis confidence")
 
 class ReportAgent:
-    """交易分析报告生成AI agent"""
+    """Trading analysis report generation AI agent"""
     
     def __init__(self, model_name: str = "gpt-4"):
         """
-        初始化报告生成AI agent
+        Initialize the report generation AI agent
         
         Args:
-            model_name: 使用的模型名称
+            model_name: The name of the model to use
         """
         self.model = ChatOpenAI(
             model_name=model_name,
@@ -49,127 +49,127 @@ class ReportAgent:
         self._setup_prompts()
         
     def _setup_prompts(self) -> None:
-        """设置提示模板"""
-        # 报告生成提示模板
+        """Set up the prompt template"""
+        # Report generation prompt template
         self.report_prompt = ChatPromptTemplate.from_messages([
-            ("system", """你是一个专业的量化交易分析师。请基于以下数据生成一份全面的交易分析报告：
+            ("system", """You are a professional quantitative trading analyst. Please generate a comprehensive trading analysis report based on the following data:
             
-            1. 回测结果分析：
-               - 策略表现评估
-               - 关键指标分析
-               - 风险收益特征
+            1. Backtest result analysis:
+               - Strategy performance evaluation
+               - Key metrics analysis
+               - Risk-return characteristics
                
-            2. 实时信号分析：
-               - 当前市场状态
-               - 信号可靠性评估
-               - 技术指标解读
+            2. Live signal analysis:
+               - Current market state
+               - Signal reliability assessment
+               - Technical indicator interpretation
                
-            3. 市场情绪分析：
-               - 整体情绪评估
-               - 关键影响因素
-               - 新闻事件影响
+            3. Market sentiment analysis:
+               - Overall sentiment assessment
+               - Key influencing factors
+               - News event impact
                
-            4. 综合建议：
-               - 交易决策建议
-               - 风险管理建议
-               - 后续关注点
+            4. Comprehensive recommendations:
+               - Trading decision recommendations
+               - Risk management recommendations
+               - Follow-up focus points
                
-            请确保报告：
-            - 逻辑清晰，重点突出
-            - 数据支持充分
-            - 建议具体可行
-            - 风险评估全面"""),
+            Ensure the report:
+            - Clear logic, prominent focus
+            - Data support sufficient
+            - Recommendations specific and feasible
+            - Comprehensive risk assessment"""),
             ("user", "{analysis_data}")
         ])
         
-        # 输出解析器
+        # Output parser
         self.output_parser = PydanticOutputParser(pydantic_object=TradingReport)
         
     def _format_analysis_data(self, data: Dict[str, Any]) -> str:
         """
-        格式化分析数据
+        Format analysis data
         
         Args:
-            data: 包含回测结果、实时信号和市场情绪的数据
+            data: Data containing backtest results, live signals, and market sentiment
             
         Returns:
-            格式化的分析数据文本
+            Formatted analysis data text
         """
         try:
             formatted_data = []
             
-            # 回测结果
+            # Backtest results
             if "backtest_results" in data:
                 backtest = data["backtest_results"]
-                formatted_data.append("=== 回测结果 ===")
-                formatted_data.append(f"总收益率: {backtest.get('total_return', 'N/A')}")
-                formatted_data.append(f"年化收益率: {backtest.get('annual_return', 'N/A')}")
-                formatted_data.append(f"最大回撤: {backtest.get('max_drawdown', 'N/A')}")
-                formatted_data.append(f"夏普比率: {backtest.get('sharpe_ratio', 'N/A')}")
-                formatted_data.append(f"胜率: {backtest.get('win_rate', 'N/A')}")
+                formatted_data.append("=== Backtest results ===")
+                formatted_data.append(f"Total return: {backtest.get('total_return', 'N/A')}")
+                formatted_data.append(f"Annual return: {backtest.get('annual_return', 'N/A')}")
+                formatted_data.append(f"Max drawdown: {backtest.get('max_drawdown', 'N/A')}")
+                formatted_data.append(f"Sharpe ratio: {backtest.get('sharpe_ratio', 'N/A')}")
+                formatted_data.append(f"Win rate: {backtest.get('win_rate', 'N/A')}")
                 
-            # 实时信号
+            # Live signal
             if "live_signal" in data:
                 signal = data["live_signal"]
-                formatted_data.append("\n=== 实时信号 ===")
-                formatted_data.append(f"信号类型: {signal.get('signal', 'N/A')}")
-                formatted_data.append(f"生成时间: {signal.get('timestamp', 'N/A')}")
-                formatted_data.append(f"当前价格: {signal.get('price', 'N/A')}")
-                formatted_data.append("技术指标:")
+                formatted_data.append("\n=== Live signal ===")
+                formatted_data.append(f"Signal type: {signal.get('signal', 'N/A')}")
+                formatted_data.append(f"Generated time: {signal.get('timestamp', 'N/A')}")
+                formatted_data.append(f"Current price: {signal.get('price', 'N/A')}")
+                formatted_data.append("Technical indicators:")
                 for indicator, value in signal.get('indicators', {}).items():
                     formatted_data.append(f"  - {indicator}: {value}")
                     
-            # 市场情绪
+            # Market sentiment
             if "sentiment_analysis" in data:
                 sentiment = data["sentiment_analysis"]
-                formatted_data.append("\n=== 市场情绪 ===")
-                formatted_data.append(f"整体情绪: {sentiment.get('overall_sentiment', 'N/A')}")
-                formatted_data.append(f"情绪得分: {sentiment.get('sentiment_score', 'N/A')}")
-                formatted_data.append(f"置信度: {sentiment.get('confidence', 'N/A')}")
-                formatted_data.append("关键点:")
+                formatted_data.append("\n=== Market sentiment ===")
+                formatted_data.append(f"Overall sentiment: {sentiment.get('overall_sentiment', 'N/A')}")
+                formatted_data.append(f"Sentiment score: {sentiment.get('sentiment_score', 'N/A')}")
+                formatted_data.append(f"Confidence: {sentiment.get('confidence', 'N/A')}")
+                formatted_data.append("Key points:")
                 for point in sentiment.get('key_points', []):
                     formatted_data.append(f"  - {point}")
-                formatted_data.append(f"新闻摘要: {sentiment.get('news_summary', 'N/A')}")
+                formatted_data.append(f"News summary: {sentiment.get('news_summary', 'N/A')}")
                 
             return "\n".join(formatted_data)
             
         except Exception as e:
-            logger.error(f"格式化分析数据时出错: {str(e)}")
+            logger.error(f"Error formatting analysis data: {str(e)}")
             return str(data)
             
     def generate_report(self, analysis_data: Dict[str, Any]) -> Dict[str, Any]:
         """
-        生成交易分析报告
+        Generate trading analysis report
         
         Args:
-            analysis_data: 包含回测结果、实时信号和市场情绪的数据
+            analysis_data: Data containing backtest results, live signals, and market sentiment
             
         Returns:
-            生成的交易分析报告
+            Generated trading analysis report
         """
         try:
-            logger.info("开始生成交易分析报告")
+            logger.info("Starting to generate trading analysis report")
             
-            # 格式化分析数据
+            # Format analysis data
             formatted_data = self._format_analysis_data(analysis_data)
             
-            # 调用模型生成报告
+            # Call model to generate report
             response = self.model.predict(
                 self.report_prompt.format(analysis_data=formatted_data)
             )
             
-            # 解析输出
+            # Parse output
             report = self.output_parser.parse(response)
             
-            # 添加时间戳
+            # Add timestamp
             report_dict = report.dict()
             report_dict["generated_at"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             
-            logger.info("交易分析报告生成完成")
+            logger.info("Trading analysis report generated")
             return report_dict
             
         except Exception as e:
-            logger.error(f"生成交易分析报告时出错: {str(e)}")
+            logger.error(f"Error generating trading analysis report: {str(e)}")
             return {
                 "error": str(e)
             } 

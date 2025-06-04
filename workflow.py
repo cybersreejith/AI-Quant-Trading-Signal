@@ -10,7 +10,7 @@ from core.agents.report_agent import ReportAgent
 from core.backtest import evaluate_backtest
 from core.agents.Strategy_agent import quant_agent
 
-# 配置日志
+# Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 

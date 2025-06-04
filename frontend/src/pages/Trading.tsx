@@ -62,7 +62,7 @@ const Trading: React.FC = () => {
         message.warning('Please input asset code');
         return;
       }
-      // TODO: 调用后端 API
+      // TODO: Call backend API
       message.success('Generating trading signal...');
     } catch (error) {
       message.error('Operation failed, please try again');

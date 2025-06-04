@@ -9,7 +9,7 @@ const { Title, Paragraph } = Typography;
 const Report: React.FC = () => {
   const navigate = useNavigate();
   
-  // 示例数据
+  // Sample Data
   const option = {
     title: {
       text: 'Trading Signal Analysis'

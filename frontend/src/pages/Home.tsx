@@ -23,7 +23,7 @@ const Home: React.FC = () => {
 
         <Col span={24}>
           <Card style={{ background: '#1a1a1a', border: 'none', height: '400px', overflow: 'hidden', position: 'relative' }}>
-            {/* 背景网格 */}
+            {/* Background grid */}
             <div style={{
               position: 'absolute',
               top: 0,
@@ -35,7 +35,7 @@ const Home: React.FC = () => {
               animation: 'gridMove 20s linear infinite'
             }} />
             
-            {/* 数据流效果 */}
+            {/* Data flow effect */}
             <div style={{
               position: 'absolute',
               top: 0,
@@ -46,7 +46,7 @@ const Home: React.FC = () => {
               animation: 'dataFlow 3s linear infinite'
             }} />
 
-            {/* 价格波动线 */}
+            {/* Price fluctuation line */}
             <div style={{
               position: 'absolute',
               top: '50%',
@@ -58,7 +58,7 @@ const Home: React.FC = () => {
               animation: 'priceWave 2s ease-in-out infinite'
             }} />
 
-            {/* 交易指标 */}
+            {/* Trading indicators */}
             <div style={{
               position: 'absolute',
               top: '30%',
@@ -90,7 +90,7 @@ const Home: React.FC = () => {
               📉 KDJ: 45
             </div>
 
-            {/* 交易信号 */}
+            {/* Trading signal */}
             <div style={{
               position: 'absolute',
               top: '60%',
@@ -102,7 +102,7 @@ const Home: React.FC = () => {
               💡 Buy Signal
             </div>
 
-            {/* 中心标题 */}
+            {/* Center Title */}
             <div style={{
               position: 'absolute',
               top: '50%',

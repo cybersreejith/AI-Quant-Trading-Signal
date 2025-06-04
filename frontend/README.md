@@ -24,12 +24,12 @@ npm start
 npm run build
 ```
 
-## 项目结构
+## Project Structure
 ```
 src/
-├── components/     # 可复用组件
-├── pages/         # 页面组件
-└── utils/         # 工具函数
+├── components/     # Reusable components
+├── pages/         # Page Components
+└── utils/         # Utility Functions
 ```
 
 ## Main functions
