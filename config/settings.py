@@ -7,15 +7,6 @@ load_dotenv()
 # API密钥
 OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
 
-# 邮件设置
-SMTP_SERVER = os.getenv('SMTP_SERVER')
-SMTP_PORT = int(os.getenv('SMTP_PORT', '587'))
-SMTP_USERNAME = os.getenv('SMTP_USERNAME')
-SMTP_PASSWORD = os.getenv('SMTP_PASSWORD')
-EMAIL_SENDER = os.getenv('EMAIL_SENDER')
-EMAIL_RECIPIENTS = os.getenv('EMAIL_RECIPIENTS').split(',')
-EMAIL_SUBJECT = "交易分析报告"
-
 # 日志设置
 LOG_LEVEL = 'INFO'
 LOG_FORMAT = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
@@ -224,3 +215,133 @@ STRATEGY_PARAMS = {
         'adx_threshold': 25
     }
 } 
+
+INDICATOR_META = {
+    # === Trend class =========================================================
+    "SMA": {
+        "desc": "Simple Moving Average",
+        "fields": ["SMA"],                                # Example of generating column names: SMA_50
+        "param_space": {"period": [10, 20, 50, 100, 200]},
+        "rule_templates": [
+            "close > SMA",                               # Bullish
+            "close < SMA"                                # Bearish
+        ]
+    },
+    "EMA": {
+        "desc": "Exponential Moving Average, more sensitive to new prices",
+        "fields": ["EMA"],
+        "param_space": {"period": [5, 10, 21, 55, 89]},
+        "rule_templates": [
+            "EMA > SMA",                                 # Trend confirmation
+            "EMA_crosses_above_SMA"                      # Golden cross
+        ]
+    },
+    "MACD": {
+        "desc": "The difference between the fast and slow EMA, to judge the bullish and bearish momentum",
+        "fields": ["MACD", "MACD_SIGNAL", "MACD_HIST"],
+        "param_space": {
+            "fast":   [8, 12, 20],
+            "slow":   [18, 26, 40],
+            "signal": [6, 9, 12]
+        },
+        "rule_templates": [
+            "MACD > MACD_SIGNAL",                        # Golden cross
+            "MACD_crosses_below_MACD_SIGNAL"             # Dead cross
+        ]
+    },
+    "ADX": {
+        "desc": "Trend strength (0–100), >25 is considered a strong trend",
+        "fields": ["ADX"],
+        "param_space": {"period": [14, 20, 28]},
+        "rule_templates": [
+            "ADX > {adx_th}",                            # Trend filtering
+            "ADX < {adx_th}"                             # Trend weakening
+        ]
+    },
+
+    # === Oscillation / Reversal class ================================================
+    "RSI": {
+        "desc": "Relative Strength Index, <30 is oversold, >70 is overbought",
+        "fields": ["RSI"],
+        "param_space": {
+            "period":  [7, 14],
+            "th_low":  [25, 30, 40],
+            "th_high": [60, 70, 80]
+        },
+        "rule_templates": [
+            "RSI < {th_low}",                            # Buy at low
+            "RSI > {th_high}"                            # Sell at high
+        ]
+    },
+    "STOCH": {
+        "desc": "Stochastic indicator (KD), to judge the oversold and overbought points",
+        "fields": ["STOCH_K", "STOCH_D"],
+        "param_space": {"k_period":[9,14], "d_period":[3]},
+        "rule_templates": [
+            "STOCH_K_crosses_above_STOCH_D",             # Bullish
+            "STOCH_K_crosses_below_STOCH_D"              # Bearish
+        ]
+    },
+
+    # === Statistical volatility / Channel class ============================================
+    "ATR": {
+        "desc": "Average True Range, used for stop loss or volatility filtering",
+        "fields": ["ATR"],
+        "param_space": {"period":[7,14,20]},
+        "rule_templates": []
+    },
+    "BBANDS": {
+        "desc": "Bollinger Bands, ±k·σ channel",
+        "fields": ["BB_UPPER", "BB_MIDDLE", "BB_LOWER"],
+        "param_space": {"period":[20], "stdev":[2, 2.5]},
+        "rule_templates": [
+            "close > BB_UPPER",                          # Breakout
+            "close < BB_LOWER"
+        ]
+    },
+    "DONCHIAN": {
+        "desc": "Donchian Channel, high and low breakout",
+        "fields": ["DONCHIAN_HIGH", "DONCHIAN_LOW"],
+        "param_space": {"period":[20,55]},
+        "rule_templates": [
+            "close > DONCHIAN_HIGH",                     # Bullish breakout
+            "close < DONCHIAN_LOW"                       # Bearish breakout
+        ]
+    },
+
+    # === Momentum / Rate of change ===============================================
+    "ROC": {
+        "desc": "Rate of Change, momentum percentage",
+        "fields": ["ROC"],
+        "param_space": {"period":[10,20]},
+        "rule_templates": [
+            "ROC > {pos_th}",                            # Momentum up
+            "ROC < -{neg_th}"
+        ]
+    },
+
+    # === Volume / Market depth ===========================================
+    "OBV": {
+        "desc": "On Balance Volume, cumulative volume momentum",
+        "fields": ["OBV"],
+        "param_space": {},
+        "rule_templates": [
+            "OBV_rising_for_3_bars"                      # OBV 3 consecutive rises
+        ]
+    }
+}
+
+# Strategy configuration schema definition
+STRAT_SCHEMA = {
+    "type": "array",
+    "items": {
+        "type": "object",
+        "required": ["name", "indicators", "params", "rule"],
+        "properties": {
+            "name": {"type": "string"},
+            "indicators": {"type": "array", "items": {"type": "string"}},
+            "params": {"type": "object"},
+            "rule": {"type": "string"}
+        }
+    }
+}

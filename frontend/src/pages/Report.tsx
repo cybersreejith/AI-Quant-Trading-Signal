@@ -1,14 +1,18 @@
 import React from 'react';
-import { Card, Typography, Table } from 'antd';
+import { Card, Typography, Table, Button } from 'antd';
+import { ArrowLeftOutlined } from '@ant-design/icons';
 import ReactECharts from 'echarts-for-react';
+import { useNavigate } from 'react-router-dom';
 
 const { Title, Paragraph } = Typography;
 
 const Report: React.FC = () => {
-  // 示例数据
+  const navigate = useNavigate();
+  
+  // Sample Data
   const option = {
     title: {
-      text: '交易信号分析'
+      text: 'Trading Signal Analysis'
     },
     tooltip: {
       trigger: 'axis'
@@ -29,9 +33,19 @@ const Report: React.FC = () => {
   return (
     <div>
       <Card style={{ marginBottom: 24 }}>
-        <Title level={3}>交易报告</Title>
+        <div style={{ display: 'flex', alignItems: 'center', marginBottom: 16 }}>
+          <Button 
+            type="text" 
+            icon={<ArrowLeftOutlined />} 
+            onClick={() => navigate('/')}
+            style={{ marginRight: 16 }}
+          >
+            Back
+          </Button>
+          <Title level={3} style={{ margin: 0 }}>Trading Report</Title>
+        </div>
         <Paragraph>
-          基于历史数据和技术指标分析生成的交易建议报告。
+          A trading suggestion report generated based on historical data and technical indicators.
         </Paragraph>
       </Card>
 
@@ -42,25 +56,25 @@ const Report: React.FC = () => {
       <Card>
         <Table
           columns={[
-            { title: '指标名称', dataIndex: 'indicator' },
-            { title: '当前值', dataIndex: 'value' },
-            { title: '信号', dataIndex: 'signal' },
-            { title: '建议', dataIndex: 'suggestion' },
+            { title: 'Indicator Name', dataIndex: 'indicator' },
+            { title: 'Current Value', dataIndex: 'value' },
+            { title: 'Signal', dataIndex: 'signal' },
+            { title: 'Suggestion', dataIndex: 'suggestion' },
           ]}
           dataSource={[
             {
               key: '1',
               indicator: 'MACD',
               value: '0.0023',
-              signal: '多头',
-              suggestion: '建议买入',
+              signal: 'Bullish',
+              suggestion: 'Buy',
             },
             {
               key: '2',
               indicator: 'RSI',
               value: '65.32',
-              signal: '中性',
-              suggestion: '建议观望',
+              signal: 'Neutral',
+              suggestion: 'Hold',
             },
           ]}
         />

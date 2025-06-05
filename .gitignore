@@ -114,4 +114,8 @@ frontend/out/
 *.tmp
 *.temp
 *.bak
-*.backup 
+*.backup
+
+# Project specific
+*.whl
+ta_lib-*.whl 

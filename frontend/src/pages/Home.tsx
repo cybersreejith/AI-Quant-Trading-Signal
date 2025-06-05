@@ -13,17 +13,17 @@ const Home: React.FC = () => {
         <Col span={24}>
           <Card style={{ background: '#1a1a1a', border: 'none' }}>
             <Title level={2} style={{ color: '#fff', textAlign: 'center' }}>
-              欢迎使用 AI 量化交易信号系统
+            Welcome to the AI ​​Quantitative Trading Signal System
             </Title>
             <Paragraph style={{ color: '#fff', textAlign: 'center' }}>
-              本系统使用先进的人工智能技术，为您提供专业的量化交易信号服务
+            This system uses advanced artificial intelligence technology to provide you with professional quantitative trading signal services
             </Paragraph>
           </Card>
         </Col>
 
         <Col span={24}>
           <Card style={{ background: '#1a1a1a', border: 'none', height: '400px', overflow: 'hidden', position: 'relative' }}>
-            {/* 背景网格 */}
+            {/* Background grid */}
             <div style={{
               position: 'absolute',
               top: 0,
@@ -35,7 +35,7 @@ const Home: React.FC = () => {
               animation: 'gridMove 20s linear infinite'
             }} />
             
-            {/* 数据流效果 */}
+            {/* Data flow effect */}
             <div style={{
               position: 'absolute',
               top: 0,
@@ -46,7 +46,7 @@ const Home: React.FC = () => {
               animation: 'dataFlow 3s linear infinite'
             }} />
 
-            {/* 价格波动线 */}
+            {/* Price fluctuation line */}
             <div style={{
               position: 'absolute',
               top: '50%',
@@ -58,7 +58,7 @@ const Home: React.FC = () => {
               animation: 'priceWave 2s ease-in-out infinite'
             }} />
 
-            {/* 交易指标 */}
+            {/* Trading indicators */}
             <div style={{
               position: 'absolute',
               top: '30%',
@@ -90,7 +90,7 @@ const Home: React.FC = () => {
               📉 KDJ: 45
             </div>
 
-            {/* 交易信号 */}
+            {/* Trading signal */}
             <div style={{
               position: 'absolute',
               top: '60%',
@@ -99,10 +99,10 @@ const Home: React.FC = () => {
               color: '#FFD700',
               animation: 'signalGlow 2s infinite'
             }}>
-              💡 买入信号
+              💡 Buy Signal
             </div>
 
-            {/* 中心标题 */}
+            {/* Center Title */}
             <div style={{
               position: 'absolute',
               top: '50%',
@@ -113,7 +113,7 @@ const Home: React.FC = () => {
               textShadow: '0 0 10px rgba(255, 215, 0, 0.5)',
               animation: 'titleGlow 2s infinite'
             }}>
-              智能量化交易
+              Intelligent Quantitative Trading
             </div>
           </Card>
         </Col>
@@ -136,16 +136,16 @@ const Home: React.FC = () => {
                 onClick={() => navigate('/trading')}
                 hoverable
               >
-                <Title level={3} style={{ color: '#fff' }}>交易信号</Title>
+                <Title level={3} style={{ color: '#fff' }}>Trading Signal</Title>
                 <Paragraph style={{ color: '#fff', textAlign: 'center' }}>
-                  选择资产类型，输入交易对，生成专业的交易信号
+                  Select asset type, input trading pair, generate professional trading signals
                 </Paragraph>
                 <Button 
                   type="primary" 
                   size="large"
                   style={{ marginTop: '20px' }}
                 >
-                  开始交易
+                  Start Trading
                 </Button>
               </Card>
             </Col>
@@ -165,16 +165,16 @@ const Home: React.FC = () => {
                 onClick={() => navigate('/report')}
                 hoverable
               >
-                <Title level={3} style={{ color: '#fff' }}>交易报告</Title>
+                <Title level={3} style={{ color: '#fff' }}>Trading Report</Title>
                 <Paragraph style={{ color: '#fff', textAlign: 'center' }}>
-                  查看历史交易记录，分析交易表现，优化交易策略
+                  View historical trading records, analyze trading performance, optimize trading strategies
                 </Paragraph>
                 <Button 
                   type="primary" 
                   size="large"
                   style={{ marginTop: '20px' }}
                 >
-                  查看报告
+                  View Report
                 </Button>
               </Card>
             </Col>
@@ -183,37 +183,37 @@ const Home: React.FC = () => {
 
         <Col span={24}>
           <Card style={{ background: '#1a1a1a', border: 'none' }}>
-            <Title level={3} style={{ color: '#fff' }}>主要功能</Title>
+            <Title level={3} style={{ color: '#fff' }}>Main Functions</Title>
             <Row gutter={[24, 24]}>
               <Col span={6}>
                 <Card style={{ background: '#2a2a2a', border: 'none' }}>
-                  <Title level={4} style={{ color: '#fff' }}>选择资产类型</Title>
+                  <Title level={4} style={{ color: '#fff' }}>Select Asset Type</Title>
                   <Paragraph style={{ color: '#fff' }}>
-                    支持全球股票、ETF、外汇、加密货币等多种资产类型
+                    Support a variety of asset types such as global stocks, ETFs, foreign exchange, and cryptocurrencies
                   </Paragraph>
                 </Card>
               </Col>
               <Col span={6}>
                 <Card style={{ background: '#2a2a2a', border: 'none' }}>
-                  <Title level={4} style={{ color: '#fff' }}>查看参考列表</Title>
+                  <Title level={4} style={{ color: '#fff' }}>View Reference List</Title>
                   <Paragraph style={{ color: '#fff' }}>
-                    提供丰富的资产代码参考，方便快速选择
+                    Provide a rich asset code reference, convenient for quick selection
                   </Paragraph>
                 </Card>
               </Col>
               <Col span={6}>
                 <Card style={{ background: '#2a2a2a', border: 'none' }}>
-                  <Title level={4} style={{ color: '#fff' }}>输入交易对</Title>
+                  <Title level={4} style={{ color: '#fff' }}>Input Trading Pair</Title>
                   <Paragraph style={{ color: '#fff' }}>
-                    支持多种交易对格式，满足不同市场需求
+                    Support a variety of trading pair formats to meet different market needs
                   </Paragraph>
                 </Card>
               </Col>
               <Col span={6}>
                 <Card style={{ background: '#2a2a2a', border: 'none' }}>
-                  <Title level={4} style={{ color: '#fff' }}>生成交易报告</Title>
+                  <Title level={4} style={{ color: '#fff' }}>Generate Trading Report</Title>
                   <Paragraph style={{ color: '#fff' }}>
-                    基于AI分析生成专业的交易建议报告
+                    Generate professional trading suggestion reports based on AI analysis
                   </Paragraph>
                 </Card>
               </Col>
