@@ -5,6 +5,7 @@ Use backtrader to implement backtest functionality
 
 import backtrader as bt
 from langchain.agents import tool
+from langchain.chat_models import ChatOpenAI
 import pandas as pd
 import numpy as np
 from typing import List, Dict, Any, Union
@@ -14,8 +15,8 @@ from config.settings import (
     INITIAL_CAPITAL,
     COMMISSION_RATE
 )
-from core.indicators import get_historical_data, calculate_indicators
-from core.agents.Strategy_agent import generate_live_signal
+from core.tools.Indicators_process import get_historical_data, calculate_indicators
+from core.tools.Strategy_generation import generate_live_signal
 import json
 
 logger = setup_logger(__name__)
@@ -144,7 +145,6 @@ class BacktestEngine:
         }
 
 
-@tool("Backtest trading strategy")
 def backtest_strategy(data: pd.DataFrame,
                        strategy: Dict[str, Any],
                        initial_capital: float = 100000.0) -> Dict[str, Any]:
@@ -164,7 +164,6 @@ def backtest_strategy(data: pd.DataFrame,
     engine.add_strategy(strategy)
     return engine.run_backtest()
 
-@tool("Evaluate strategy backtest results and generate performance analysis report")
 def evaluate_backtest(backtest_results: Dict[str, Any]) -> Dict[str, Any]:
     """
     Evaluate backtest results and generate detailed performance analysis report
@@ -256,10 +255,18 @@ def evaluate_backtest(backtest_results: Dict[str, Any]) -> Dict[str, Any]:
     if max_drawdown > 0.3:
         evaluation_report['conclusion']['weaknesses'].append('Large drawdown')
     
+    # Add is_satisfactory flag based on key metrics
+    evaluation_report['is_satisfactory'] = (
+        sharpe_ratio > 1.0 and  # 夏普比率大于1
+        win_rate > 0.5 and      # 胜率大于50%
+        max_drawdown < 0.3 and  # 最大回撤小于30%
+        total_trades >= 10      # 至少有10笔交易
+    )
+    
     return evaluation_report
 
-
-def quant_trading_run(symbol: str, strategy: Dict[str, Any]) -> Dict[str, Any]:
+@tool("根据用户请求的资产代码和策略配置，先获取历史数据，然后计算技术指标，再获取实时交易信号，最后运行回测，并评估回测结果，最终返回包含实盘交易信号的JSON格式的回测结果报告")
+def quant_analysis(symbol: str, strategy: Dict[str, Any]) -> Dict[str, Any]:
     """
     运行量化交易回测
     
@@ -311,7 +318,8 @@ def quant_trading_run(symbol: str, strategy: Dict[str, Any]) -> Dict[str, Any]:
             'performance_metrics': evaluation['performance_metrics'],
             'trading_statistics': evaluation['trading_statistics'],
             'risk_metrics': evaluation['risk_metrics'],
-            'conclusion': evaluation['conclusion']
+            'conclusion': evaluation['conclusion'],
+            'is_satisfactory': evaluation['is_satisfactory']  # 添加策略满意度标志
         }
         
         return report
@@ -323,3 +331,51 @@ def quant_trading_run(symbol: str, strategy: Dict[str, Any]) -> Dict[str, Any]:
             'symbol': symbol,
             'error': str(e)
         }
+    
+def generate_live_signal(data: pd.DataFrame, strategy: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Generate a live trading signal using LLM based on live data and trading strategy
+    
+    Args:
+        data: Live data, containing technical indicators
+        strategy: Strategy configuration dictionary
+        
+    Returns:
+        Dict[str, Any]: The dictionary containing the trading signal
+    """
+    try:
+        # Get the latest data point
+        latest_data = data.iloc[-1]
+        
+        # Build prompt
+        prompt = f"""
+        You are an expert quant trader.
+        Please determine whether to buy, sell, or hold based on the following technical indicator data and trading strategy:
+        
+        Current price: {latest_data['CLOSE']}
+        Technical indicators:
+        {json.dumps({indicator: latest_data[indicator] for indicator in strategy['indicators']}, indent=2)}
+        
+        Trading strategy:
+        {json.dumps(strategy, indent=2, ensure_ascii=False)}
+        
+        Please only answer: BUY, SELL or HOLD
+        """
+        
+        # Call LLM to get signal
+        response = llm.invoke(prompt)
+        signal = response.strip().upper()
+        
+        # Validate signal validity
+        if signal not in ["BUY", "SELL", "HOLD"]:
+            signal = "HOLD"  # Default hold
+            
+        # Return signal details
+        return signal
+        
+    except Exception as e:
+        logger.error(f"Error generating trading signal: {str(e)}")
+        raise 
+
+# Initialize LLM and parser
+llm = ChatOpenAI(model="gpt-4", temperature=0.2)    
