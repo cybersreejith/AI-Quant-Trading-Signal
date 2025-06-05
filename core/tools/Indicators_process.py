@@ -9,7 +9,6 @@ from utils.logger import setup_logger
 from langchain.agents import tool
 logger = setup_logger(__name__)
 
-@tool("Get historical data for an asset")
 def get_historical_data(symbol: str) -> Optional[pd.DataFrame]:
     """
     Get historical data for an asset, default from the current time to 1 year ago.    
@@ -53,7 +52,6 @@ def get_historical_data(symbol: str) -> Optional[pd.DataFrame]:
         logging.error(f"Error getting historical data for {symbol}: {str(e)}")
         return None
 
-@tool("Calculate all technical indicators")
 def calculate_indicators(data: pd.DataFrame) -> pd.DataFrame:
     """
     Calculate all technical indicators

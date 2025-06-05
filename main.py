@@ -1,6 +1,6 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
-from workflow import create_workflow_graph, WorkflowState
+from core.workflow import create_workflow_graph, WorkflowState
 import logging
 from utils.logger import setup_logger
 

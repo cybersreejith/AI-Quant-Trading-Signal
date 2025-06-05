@@ -15,6 +15,7 @@ from langchain.schema import Document
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.vectorstores import FAISS
 from langchain.embeddings import OpenAIEmbeddings
+from langchain.agents import tool
 
 # Load environment variables
 load_dotenv()
@@ -48,7 +49,7 @@ class SentimentAnalysis(BaseModel):
 class SentimentAgent:
     """Market sentiment analysis AI agent"""
     
-    def __init__(self, model_name: str = "gpt-4"):
+    def __init__(self, model_name: str = "gpt-4o"):
         """
         Initialize the market sentiment analysis AI agent
         
@@ -186,7 +187,7 @@ class SentimentAgent:
             return {
                 "error": str(e)
             }
-            
+    @tool("根据用户请求的资产代码，获取相关新闻，并分析市场情绪，最终返回包含市场情绪分析结果的JSON格式的市场情绪分析报告")            
     def analyze_market_sentiment(self, symbol: str) -> Dict[str, Any]:
         """
         Analyze market sentiment

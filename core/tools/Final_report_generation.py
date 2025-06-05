@@ -7,6 +7,7 @@ from langchain.prompts import ChatPromptTemplate
 from langchain.output_parsers import PydanticOutputParser
 from pydantic import BaseModel, Field
 from datetime import datetime
+from langchain.agents import tool
 
 # Load environment variables
 load_dotenv()
@@ -34,7 +35,7 @@ class TradingReport(BaseModel):
 class ReportAgent:
     """Trading analysis report generation AI agent"""
     
-    def __init__(self, model_name: str = "gpt-4"):
+    def __init__(self, model_name: str = "gpt-4o"):
         """
         Initialize the report generation AI agent
         
@@ -136,7 +137,8 @@ class ReportAgent:
         except Exception as e:
             logger.error(f"Error formatting analysis data: {str(e)}")
             return str(data)
-            
+        
+    @tool("综合市场情绪分析报告和量化分析报告，生成最终的分析报告")        
     def generate_report(self, analysis_data: Dict[str, Any]) -> Dict[str, Any]:
         """
         Generate trading analysis report

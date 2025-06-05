@@ -265,7 +265,7 @@ def evaluate_backtest(backtest_results: Dict[str, Any]) -> Dict[str, Any]:
     
     return evaluation_report
 
-@tool("根据用户请求的资产代码和策略配置，先获取历史数据，然后计算技术指标，再获取实时交易信号，最后运行回测，并评估回测结果，最终返回包含实盘交易信号的JSON格式的回测结果报告")
+@tool("根据用户请求的资产代码和策略配置，进行量化分析即先获取历史数据，然后计算技术指标，再获取实时交易信号，运行回测，评估回测结果，最终返回包含实盘交易信号的JSON格式的回测结果报告")
 def quant_analysis(symbol: str, strategy: Dict[str, Any]) -> Dict[str, Any]:
     """
     运行量化交易回测
@@ -378,4 +378,4 @@ def generate_live_signal(data: pd.DataFrame, strategy: Dict[str, Any]) -> Dict[s
         raise 
 
 # Initialize LLM and parser
-llm = ChatOpenAI(model="gpt-4", temperature=0.2)    
+llm = ChatOpenAI(model="gpt-4o", temperature=0.2)    
