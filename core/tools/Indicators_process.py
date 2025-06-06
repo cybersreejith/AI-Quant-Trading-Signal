@@ -6,7 +6,6 @@ import logging
 from datetime import datetime, timedelta
 from typing import Optional
 from utils.logger import setup_logger
-from langchain.agents import tool
 logger = setup_logger(__name__)
 
 def get_historical_data(symbol: str) -> Optional[pd.DataFrame]:

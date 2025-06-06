@@ -41,7 +41,7 @@ def build_prompt(indicator_meta: dict,
     return ChatPromptTemplate.from_messages(
         [("system", system_part), ("user", user_part)]
     )
-@tool("生成一个量化交易策略")
+@tool("Generate a quantitative trading strategy")
 def generate_strategy() -> dict:
     """
     Generate a single trading strategy
