@@ -1,26 +1,26 @@
 import os
 from dotenv import load_dotenv
 
-# 加载环境变量
+# Loading environment variables
 load_dotenv()
 
-# API密钥
+# API key
 OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
 
-# 日志设置
+# Log settings
 LOG_LEVEL = 'INFO'
 LOG_FORMAT = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 
-# 交易设置
+# Trading settings
 TRADING_PAIRS = ['BTC-USD', 'ETH-USD', 'BNB-USD']
 START_DATE = '2023-01-01'
 END_DATE = '2024-01-01'
 INITIAL_CAPITAL = 100000
-POSITION_SIZE = 0.1  # 每次交易使用资金的10%
-COMMISSION_RATE = 0.001  # 0.1%手续费
-SLIPPAGE = 0.001  # 0.1%滑点
+POSITION_SIZE = 0.1  # 10% of the trading capital
+COMMISSION_RATE = 0.001  # 0.1% commission
+SLIPPAGE = 0.001  # 0.1% slippage
 
-# 策略参数
+# Strategy parameters
 RSI_OVERSOLD = 30
 RSI_OVERBOUGHT = 70
 MACD_FAST_PERIOD = 12
@@ -29,48 +29,48 @@ MACD_SIGNAL_PERIOD = 9
 ADX_THRESHOLD = 25
 ATR_MULTIPLIER = 2
 
-# 数据配置
+# Data configuration
 DEFAULT_TIMEFRAME = '1d'
 DEFAULT_START_DATE = '2020-01-01'
-DEFAULT_END_DATE = None  # 使用当前日期
+DEFAULT_END_DATE = None  # Use current date
 
-# 回测配置
+# Backtest configuration
 DEFAULT_INITIAL_CASH = 100000.0
 DEFAULT_COMMISSION = 0.001  # 0.1%
 
-# 热门资产列表
+# Popular asset list
 POPULAR_ASSETS = {
-    '1': {  # 全球股票
-        'name': '全球股票',
+    '1': {  # Global stocks
+        'name': 'Global stocks',
         'assets': [
-            'AAPL',  # 苹果
-            'MSFT',  # 微软
-            'GOOGL', # 谷歌
-            'AMZN',  # 亚马逊
+            'AAPL',  # Apple
+            'MSFT',  # Microsoft
+            'GOOGL', # Google
+            'AMZN',  # Amazon
             'META',  # Meta
-            'NVDA',  # 英伟达
-            'TSLA',  # 特斯拉
-            'BABA',  # 阿里巴巴
-            'PDD',   # 拼多多
-            'NIO',   # 蔚来
-            'JPM',   # 摩根大通
+            'NVDA',  # NVIDIA
+            'TSLA',  # Tesla
+            'BABA',  # Alibaba
+            'PDD',   # PDD
+            'NIO',   # NIO
+            'JPM',   # JPMorgan Chase
             'V',     # Visa
-            'WMT',   # 沃尔玛
-            'MA',    # 万事达
-            'HD',    # 家得宝
-            'BAC',   # 美国银行
-            'XOM',   # 埃克森美孚
-            'PFE',   # 辉瑞
-            'AVGO',  # 博通
-            'COST',  # 好市多
-            'TMO',   # 赛默飞世尔
-            'CSCO',  # 思科
-            'DHR',   # 丹纳赫
-            'ABBV',  # 艾伯维
-            'WFC',   # 富国银行
-            'MRK',   # 默克
-            'VZ',    # 威瑞森
-            'NKE',   # 耐克
+            'WMT',   # Walmart
+            'MA',    # Mastercard
+            'HD',    # Home Depot
+            'BAC',   # Bank of America
+            'XOM',   # ExxonMobil
+            'PFE',   # Pfizer
+            'AVGO',  # Broadcom
+            'COST',  # Costco
+            'TMO',   # Thermo Fisher Scientific
+            'CSCO',  # Cisco
+            'DHR',   # Danaher
+            'ABBV',  # AbbVie
+            'WFC',   # Wells Fargo
+            'MRK',   # Merck
+            'VZ',    # Verizon
+            'NKE',   # Nike
             'CRM',   # Salesforce
             'NEE'    # NextEra Energy
         ]
@@ -78,95 +78,95 @@ POPULAR_ASSETS = {
     '2': {  # ETF
         'name': 'ETF',
         'assets': [
-            'SPY',   # 标普500ETF
-            'QQQ',   # 纳斯达克100ETF
-            'DIA',   # 道琼斯ETF
-            'IWM',   # 罗素2000ETF
-            'EFA',   # 发达市场ETF
-            'EEM',   # 新兴市场ETF
-            'GLD',   # 黄金ETF
-            'SLV',   # 白银ETF
-            'TLT',   # 20年期国债ETF
-            'VNQ',   # 房地产ETF
-            'XLK',   # 科技ETF
-            'XLF',   # 金融ETF
-            'XLE',   # 能源ETF
-            'XLV',   # 医疗保健ETF
-            'XLI',   # 工业ETF
-            'XLP',   # 消费品ETF
-            'XLY',   # 非必需消费品ETF
-            'XLB',   # 材料ETF
-            'XLU',   # 公用事业ETF
-            'XBI',   # 生物科技ETF
-            'ARKK',  # ARK创新ETF
-            'IEFA',  # 发达市场ETF
-            'IEMG',  # 新兴市场ETF
-            'AGG',   # 美国综合债券ETF
-            'LQD',   # 投资级公司债ETF
-            'HYG',   # 高收益债券ETF
-            'GDX',   # 金矿ETF
-            'GDXJ',  # 小型金矿ETF
-            'USO',   # 原油ETF
-            'UNG'    # 天然气ETF
+            'SPY',   # S&P 500 ETF
+            'QQQ',   # Nasdaq 100 ETF
+            'DIA',   # Dow Jones ETF
+            'IWM',   # Russell 2000 ETF
+            'EFA',   # Developed Markets ETF
+            'EEM',   # Emerging Markets ETF
+            'GLD',   # Gold ETF
+            'SLV',   # Silver ETF
+            'TLT',   # 20-year Treasury ETF
+            'VNQ',   # Real Estate ETF
+            'XLK',   # Technology ETF
+            'XLF',   # Financial ETF
+            'XLE',   # Energy ETF
+            'XLV',   # Healthcare ETF
+            'XLI',   # Industrial ETF
+            'XLP',   # Consumer Staples ETF
+            'XLY',   # Consumer Discretionary ETF
+            'XLB',   # Materials ETF
+            'XLU',   # Utilities ETF
+            'XBI',   # Biotechnology ETF
+            'ARKK',  # ARK Innovation ETF
+            'IEFA',  # Developed Markets ETF
+            'IEMG',  # Emerging Markets ETF
+            'AGG',   # US Aggregate Bond ETF
+            'LQD',   # Investment-grade Corporate Bond ETF
+            'HYG',   # High-yield Corporate Bond ETF
+            'GDX',   # Gold Miners ETF
+            'GDXJ',  # Small-cap Gold Miners ETF
+            'USO',   # Crude Oil ETF
+            'UNG',   # Natural Gas ETF
         ]
     },
-    '3': {  # 外汇
-        'name': '外汇',
+    '3': {  # Forex
+        'name': 'Forex',
         'assets': [
-            'EURUSD=X',  # 欧元/美元
-            'GBPUSD=X',  # 英镑/美元
-            'USDJPY=X',  # 美元/日元
-            'AUDUSD=X',  # 澳元/美元
-            'USDCAD=X',  # 美元/加元
-            'NZDUSD=X',  # 新西兰元/美元
-            'USDCHF=X',  # 美元/瑞郎
-            'EURGBP=X',  # 欧元/英镑
-            'EURJPY=X',  # 欧元/日元
-            'GBPJPY=X',  # 英镑/日元
-            'EURCAD=X',  # 欧元/加元
-            'AUDJPY=X',  # 澳元/日元
-            'NZDJPY=X',  # 新西兰元/日元
-            'GBPAUD=X',  # 英镑/澳元
-            'EURAUD=X',  # 欧元/澳元
-            'USDSGD=X',  # 美元/新加坡元
-            'USDHKD=X',  # 美元/港币
-            'EURCHF=X',  # 欧元/瑞郎
-            'GBPCHF=X',  # 英镑/瑞郎
-            'AUDNZD=X',  # 澳元/新西兰元
-            'CADJPY=X',  # 加元/日元
-            'CHFJPY=X',  # 瑞郎/日元
-            'EURCAD=X',  # 欧元/加元
-            'GBPNZD=X',  # 英镑/新西兰元
-            'AUDCAD=X',  # 澳元/加元
-            'NZDCHF=X',  # 新西兰元/瑞郎
-            'CADCHF=X',  # 加元/瑞郎
-            'EURHKD=X',  # 欧元/港币
-            'GBPHKD=X',  # 英镑/港币
-            'AUDHKD=X'   # 澳元/港币
+            'EURUSD=X',  # EUR/USD
+            'GBPUSD=X',  # GBP/USD
+            'USDJPY=X',  # USD/JPY
+            'AUDUSD=X',  # AUD/USD
+            'USDCAD=X',  # USD/CAD
+            'NZDUSD=X',  # NZD/USD
+            'USDCHF=X',  # USD/CHF
+            'EURGBP=X',  # EUR/GBP
+            'EURJPY=X',  # EUR/JPY
+            'GBPJPY=X',  # GBP/JPY
+            'EURCAD=X',  # EUR/CAD
+            'AUDJPY=X',  # AUD/JPY
+            'NZDJPY=X',  # NZD/JPY
+            'GBPAUD=X',  # GBP/AUD
+            'EURAUD=X',  # EUR/AUD
+            'USDSGD=X',  # USD/SGD
+            'USDHKD=X',  # USD/HKD
+            'EURCHF=X',  # EUR/CHF
+            'GBPCHF=X',  # GBP/CHF
+            'AUDNZD=X',  # AUD/NZD
+            'CADJPY=X',  # CAD/JPY
+            'CHFJPY=X',  # CHF/JPY
+            'EURCAD=X',  # EUR/CAD
+            'GBPNZD=X',  # GBP/NZD
+            'AUDCAD=X',  # AUD/CAD
+            'NZDCHF=X',  # NZD/CHF
+            'CADCHF=X',  # CAD/CHF
+            'EURHKD=X',  # EUR/HKD
+            'GBPHKD=X',  # GBP/HKD
+            'AUDHKD=X'   # AUD/HKD
         ]
     },
-    '4': {  # 加密货币
-        'name': '加密货币',
+    '4': {  # Cryptocurrency
+        'name': 'Cryptocurrency',
         'assets': [
-            'BTC-USD',  # 比特币
-            'ETH-USD',  # 以太坊
-            'BNB-USD',  # 币安币
-            'XRP-USD',  # 瑞波币
-            'ADA-USD',  # 卡尔达诺
-            'DOGE-USD', # 狗狗币
-            'DOT-USD',  # 波卡
-            'SOL-USD',  # 索拉纳
-            'AVAX-USD', # Avalanche
-            'MATIC-USD',# Polygon
-            'LINK-USD', # Chainlink
-            'UNI-USD',  # Uniswap
-            'AAVE-USD', # Aave
-            'COMP-USD', # Compound
-            'SUSHI-USD',# SushiSwap
-            'YFI-USD',  # Yearn Finance
-            'SNX-USD',  # Synthetix
-            'MKR-USD',  # Maker
-            'CRV-USD',  # Curve
+            'BTC-USD',  # BTC/USD
+            'ETH-USD',  # ETH/USD
+            'BNB-USD',  # BNB/USD
+            'XRP-USD',  # XRP/USD
+            'ADA-USD',  # ADA/USD
+            'DOGE-USD', # DOGE/USD
+            'DOT-USD',  # DOT/USD
+            'SOL-USD',  # SOL/USD
+            'AVAX-USD', # AVAX/USD
+            'MATIC-USD',# MATIC/USD
+            'LINK-USD', # LINK/USD
+            'UNI-USD',  # UNI/USD
+            'AAVE-USD', # AAVE/USD
+            'COMP-USD', # COMP/USD
+            'SUSHI-USD',# SUSHI/USD
+            'YFI-USD',  # YFI/USD
+            'SNX-USD',  # SNX/USD
+            'MKR-USD',  # MKR/USD
+            'CRV-USD',  # CRV/USD
             'BAL-USD',  # Balancer
             'SXP-USD',  # SXP
             'CAKE-USD', # PancakeSwap
@@ -182,7 +182,7 @@ POPULAR_ASSETS = {
     }
 }
 
-# 策略参数
+# Strategy parameters
 STRATEGY_PARAMS = {
     'ClassicTrendFollow': {
         'macd_fast': 12,
