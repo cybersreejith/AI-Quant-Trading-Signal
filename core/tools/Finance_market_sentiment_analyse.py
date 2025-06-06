@@ -187,7 +187,7 @@ class SentimentAgent:
             return {
                 "error": str(e)
             }
-    @tool("根据用户请求的资产代码，获取相关新闻，并分析市场情绪，最终返回包含市场情绪分析结果的JSON格式的市场情绪分析报告")            
+    @tool("According to the symbol requested from frontend, obtain relevant news, analyze market sentiment, and finally return a market sentiment analysis report in JSON format containing the market sentiment analysis results")            
     def analyze_market_sentiment(self, symbol: str) -> Dict[str, Any]:
         """
         Analyze market sentiment

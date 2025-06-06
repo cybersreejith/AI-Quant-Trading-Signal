@@ -15,8 +15,7 @@ from config.settings import (
     INITIAL_CAPITAL,
     COMMISSION_RATE
 )
-from core.tools.Indicators_process import get_historical_data, calculate_indicators
-from core.tools.Strategy_generation import generate_live_signal
+from core.tools.indicators_process import get_historical_data, calculate_indicators
 import json
 
 logger = setup_logger(__name__)
@@ -27,7 +26,7 @@ class BacktestEngine:
         self.cerebro = bt.Cerebro()
         self.cerebro.broker.setcash(INITIAL_CAPITAL)
         self.cerebro.broker.setcommission(commission=COMMISSION_RATE)
-        self.cerebro.addsizer(bt.sizers.PercentSizer, percents=10)  # 每次交易10%仓位
+        self.cerebro.addsizer(bt.sizers.PercentSizer, percents=10)  # 10% of position per trade
         self.strategy_config = None
         
         # Add analyzers
@@ -257,55 +256,55 @@ def evaluate_backtest(backtest_results: Dict[str, Any]) -> Dict[str, Any]:
     
     # Add is_satisfactory flag based on key metrics
     evaluation_report['is_satisfactory'] = (
-        sharpe_ratio > 1.0 and  # 夏普比率大于1
-        win_rate > 0.5 and      # 胜率大于50%
-        max_drawdown < 0.3 and  # 最大回撤小于30%
-        total_trades >= 10      # 至少有10笔交易
+        sharpe_ratio > 1.0 and
+        win_rate > 0.5 and      
+        max_drawdown < 0.3 and 
+        total_trades >= 10      
     )
     
     return evaluation_report
 
-@tool("根据用户请求的资产代码和策略配置，进行量化分析即先获取历史数据，然后计算技术指标，再获取实时交易信号，运行回测，评估回测结果，最终返回包含实盘交易信号的JSON格式的回测结果报告")
+@tool("According to the symbol requested by frontend and trading strategy generated, quantitative analysis is performed as follows: firstly obtaining historical data, then calculating technical indicators, and then obtaining real-time trading signals, running backtesting, evaluating backtesting results, and finally returning a quantitative analysis result report in JSON format containing real-time trading signals.")
 def quant_analysis(symbol: str, strategy: Dict[str, Any]) -> Dict[str, Any]:
     """
-    运行量化交易回测
+    Run quantitative trading backtest
     
     Args:
-        symbol: 资产代码，例如 'AAPL'
-        strategy: 策略配置字典，包含策略参数
+        symbol: Asset code, e.g. 'AAPL'
+        strategy: Strategy configuration dictionary, containing strategy parameters
         
     Returns:
-        Dict[str, Any]: 回测结果报告
+        Dict[str, Any]: Backtest result report
     """
     try:
-        # 1. 获取历史数据
+        # 1. Get historical data
         historical_data = get_historical_data(symbol)
         if historical_data is None:
-            raise ValueError(f"无法获取资产 {symbol} 的历史数据")
+            raise ValueError(f"Failed to get historical data for asset {symbol}")
             
-        # 2. 计算技术指标
+        # 2. Calculate technical indicators
         data_with_indicators = calculate_indicators(historical_data)
         if data_with_indicators is None:
-            raise ValueError("计算技术指标失败")
+            raise ValueError("Failed to calculate technical indicators")
             
-        # 3. 获取实时交易信号
+        # 3. Get real-time trading signal
         try:
             live_signal = generate_live_signal(data_with_indicators, strategy)
         except Exception as e:
-            logger.warning(f"获取实时交易信号失败: {str(e)}")
-            live_signal = "HOLD"  # 默认持有
+            logger.warning(f"Failed to get real-time trading signal: {str(e)}")
+            live_signal = "HOLD"  # Default hold
             
-        # 4. 运行回测
+        # 4. Run backtest
         backtest_result = backtest_strategy(
             data=data_with_indicators,
             strategy=strategy,
             initial_capital=INITIAL_CAPITAL
         )
         
-        # 5. 评估回测结果
+        # 5. Evaluate backtest results
         evaluation = evaluate_backtest(backtest_result)
         
-        # 6. 生成回测报告
+        # 6. Generate backtest report
         report = {
             'status': 'success',
             'symbol': symbol,
@@ -314,18 +313,18 @@ def quant_analysis(symbol: str, strategy: Dict[str, Any]) -> Dict[str, Any]:
                 'start_date': historical_data.index[0].strftime('%Y-%m-%d'),
                 'end_date': historical_data.index[-1].strftime('%Y-%m-%d')
             },
-            'live_signal': live_signal,  # 添加实时交易信号
+            'live_signal': live_signal,  # Add real-time trading signal
             'performance_metrics': evaluation['performance_metrics'],
             'trading_statistics': evaluation['trading_statistics'],
             'risk_metrics': evaluation['risk_metrics'],
             'conclusion': evaluation['conclusion'],
-            'is_satisfactory': evaluation['is_satisfactory']  # 添加策略满意度标志
+            'is_satisfactory': evaluation['is_satisfactory']  # Add strategy satisfaction flag
         }
         
         return report
         
     except Exception as e:
-        logger.error(f"量化交易回测运行失败: {str(e)}")
+        logger.error(f"Failed to run quantitative trading backtest: {str(e)}")
         return {
             'status': 'error',
             'symbol': symbol,

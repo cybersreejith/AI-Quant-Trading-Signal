@@ -8,6 +8,7 @@ from langchain.output_parsers import PydanticOutputParser
 from pydantic import BaseModel, Field
 from datetime import datetime
 from langchain.agents import tool
+import json
 
 # Load environment variables
 load_dotenv()
@@ -23,14 +24,14 @@ if not OPENAI_API_KEY:
     raise ValueError("OPENAI_API_KEY not found, please make sure your .env file is configured correctly")
 
 class TradingReport(BaseModel):
-    """Trading analysis report model"""
-    summary: str = Field(description="Report summary")
-    backtest_analysis: Dict[str, Any] = Field(description="Backtest result analysis")
-    live_signal_analysis: Dict[str, Any] = Field(description="Live signal analysis")
-    sentiment_analysis: Dict[str, Any] = Field(description="Market sentiment analysis")
+    """Trading report model"""
+    summary: str = Field(description="Overall analysis summary")
+    market_sentiment: Dict[str, Any] = Field(description="Market sentiment analysis")
+    quant_analysis: Dict[str, Any] = Field(description="Quantitative analysis results")
     recommendations: List[str] = Field(description="Trading recommendations")
     risk_assessment: Dict[str, Any] = Field(description="Risk assessment")
-    confidence_score: float = Field(description="Overall analysis confidence")
+    confidence_score: float = Field(description="Analysis confidence")
+    generated_at: str = Field(description="Report generation time")
 
 class ReportAgent:
     """Trading analysis report generation AI agent"""
@@ -53,98 +54,56 @@ class ReportAgent:
         """Set up the prompt template"""
         # Report generation prompt template
         self.report_prompt = ChatPromptTemplate.from_messages([
-            ("system", """You are a professional quantitative trading analyst. Please generate a comprehensive trading analysis report based on the following data:
+            ("system", """You are a professional quantitative trading analyst. Please generate a comprehensive analysis report based on the provided original quantitative analysis and market sentiment data.
+
+            The input data will include two main parts:
+            1. quant_analysis: Contains strategy performance metrics, trading statistics, risk assessment, etc.
+            2. market_sentiment: Contains market sentiment analysis and news summary.
+
+            Please analyze these original data carefully and generate a JSON format report containing the following fields:
+            {
+                "summary": "Overall analysis summary, including comprehensive evaluation of strategy performance and market environment",
+                "market_sentiment": {
+                    "overall_sentiment": "Evaluation of market sentiment based on original data",
+                    "key_factors": ["List of key factors affecting market sentiment"],
+                    "news_impact": "Analysis of the impact of important news events on the market"
+                },
+                "quant_analysis": {
+                    "strategy_performance": "Evaluation of the overall performance of the strategy",
+                    "key_metrics": "Analysis and interpretation of key metrics",
+                    "risk_return": "Analysis of risk and return characteristics"
+                },
+                "recommendations": [
+                    "Specific trading recommendations based on the analysis results"
+                ],
+                "risk_assessment": {
+                    "market_risk": "Current market risk analysis",
+                    "strategy_risk": "Strategy risk analysis",
+                    "risk_mitigation": "Risk mitigation suggestions"
+                },
+                "confidence_score": 0.95  // Overall analysis confidence
+            }
             
-            1. Backtest result analysis:
-               - Strategy performance evaluation
-               - Key metrics analysis
-               - Risk-return characteristics
-               
-            2. Live signal analysis:
-               - Current market state
-               - Signal reliability assessment
-               - Technical indicator interpretation
-               
-            3. Market sentiment analysis:
-               - Overall sentiment assessment
-               - Key influencing factors
-               - News event impact
-               
-            4. Comprehensive recommendations:
-               - Trading decision recommendations
-               - Risk management recommendations
-               - Follow-up focus points
-               
-            Ensure the report:
-            - Clear logic, prominent focus
-            - Data support sufficient
-            - Recommendations specific and feasible
-            - Comprehensive risk assessment"""),
+            Requirements:
+            1. Strictly follow the above JSON format
+            2. Based on the original data for in-depth analysis, do not simply repeat the data
+            3. Provide valuable insights and recommendations
+            4. Ensure all numerical analyses are accurate
+            5. Risk assessment must be comprehensive and practical"""),
             ("user", "{analysis_data}")
         ])
         
         # Output parser
         self.output_parser = PydanticOutputParser(pydantic_object=TradingReport)
         
-    def _format_analysis_data(self, data: Dict[str, Any]) -> str:
-        """
-        Format analysis data
-        
-        Args:
-            data: Data containing backtest results, live signals, and market sentiment
-            
-        Returns:
-            Formatted analysis data text
-        """
-        try:
-            formatted_data = []
-            
-            # Backtest results
-            if "backtest_results" in data:
-                backtest = data["backtest_results"]
-                formatted_data.append("=== Backtest results ===")
-                formatted_data.append(f"Total return: {backtest.get('total_return', 'N/A')}")
-                formatted_data.append(f"Annual return: {backtest.get('annual_return', 'N/A')}")
-                formatted_data.append(f"Max drawdown: {backtest.get('max_drawdown', 'N/A')}")
-                formatted_data.append(f"Sharpe ratio: {backtest.get('sharpe_ratio', 'N/A')}")
-                formatted_data.append(f"Win rate: {backtest.get('win_rate', 'N/A')}")
-                
-            # Live signal
-            if "live_signal" in data:
-                signal = data["live_signal"]
-                formatted_data.append("\n=== Live signal ===")
-                formatted_data.append(f"Signal type: {signal.get('signal', 'N/A')}")
-                formatted_data.append(f"Generated time: {signal.get('timestamp', 'N/A')}")
-                formatted_data.append(f"Current price: {signal.get('price', 'N/A')}")
-                formatted_data.append("Technical indicators:")
-                for indicator, value in signal.get('indicators', {}).items():
-                    formatted_data.append(f"  - {indicator}: {value}")
-                    
-            # Market sentiment
-            if "sentiment_analysis" in data:
-                sentiment = data["sentiment_analysis"]
-                formatted_data.append("\n=== Market sentiment ===")
-                formatted_data.append(f"Overall sentiment: {sentiment.get('overall_sentiment', 'N/A')}")
-                formatted_data.append(f"Sentiment score: {sentiment.get('sentiment_score', 'N/A')}")
-                formatted_data.append(f"Confidence: {sentiment.get('confidence', 'N/A')}")
-                formatted_data.append("Key points:")
-                for point in sentiment.get('key_points', []):
-                    formatted_data.append(f"  - {point}")
-                formatted_data.append(f"News summary: {sentiment.get('news_summary', 'N/A')}")
-                
-            return "\n".join(formatted_data)
-            
-        except Exception as e:
-            logger.error(f"Error formatting analysis data: {str(e)}")
-            return str(data)
-        
-    @tool("综合市场情绪分析报告和量化分析报告，生成最终的分析报告")        
-    def generate_report(self, analysis_data: Dict[str, Any]) -> Dict[str, Any]:
+    @tool("Generate a comprehensive analysis report based on the provided original quantitative analysis and market sentiment analysis")        
+    def generate_report(self, quant_analysis_result: Dict[str, Any], market_sentiment_result: Dict[str, Any]) -> Dict[str, Any]:
         """
         Generate trading analysis report
         
         Args:
-            analysis_data: Data containing backtest results, live signals, and market sentiment
+            quant_analysis_result: Quantitative analysis result JSON object
+            market_sentiment_result: Market sentiment analysis result JSON object
             
         Returns:
             Generated trading analysis report
@@ -152,20 +111,27 @@ class ReportAgent:
         try:
             logger.info("Starting to generate trading analysis report")
             
-            # Format analysis data
-            formatted_data = self._format_analysis_data(analysis_data)
+            # Merge two JSON objects as input data
+            combined_data = {
+                "quant_analysis": quant_analysis_result,
+                "market_sentiment": market_sentiment_result
+            }
             
             # Call model to generate report
-            response = self.model.predict(
-                self.report_prompt.format(analysis_data=formatted_data)
+            response = self.model.invoke(
+                self.report_prompt.format(analysis_data=json.dumps(combined_data, ensure_ascii=False, indent=2))
             )
             
             # Parse output
-            report = self.output_parser.parse(response)
+            report = self.output_parser.parse(response.content)
             
-            # Add timestamp
-            report_dict = report.dict()
-            report_dict["generated_at"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            # Only return the report content generated by LLM, add timestamp
+            report_dict = report.model_dump()
+            report_dict.update({
+                "quant_analysis": quant_analysis_result,
+                "market_sentiment": market_sentiment_result,
+                "generated_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            })
             
             logger.info("Trading analysis report generated")
             return report_dict
