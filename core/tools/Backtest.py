@@ -159,8 +159,11 @@ def backtest_strategy(data: pd.DataFrame,
         Dict[str, Any]: Backtest results
     """
     engine = BacktestEngine()
+    logger.info(f"backtest engine set up")
     engine.set_data(data)
+    logger.info(f"backtest engine set data")
     engine.add_strategy(strategy)
+    logger.info(f"backtest engine add strategy")
     return engine.run_backtest()
 
 def evaluate_backtest(backtest_results: Dict[str, Any]) -> Dict[str, Any]:
@@ -264,28 +267,25 @@ def evaluate_backtest(backtest_results: Dict[str, Any]) -> Dict[str, Any]:
     
     return evaluation_report
 
-@tool("According to the symbol requested by frontend and trading strategy generated, quantitative analysis is performed as follows: firstly obtaining historical data, then calculating technical indicators, and then obtaining real-time trading signals, running backtesting, evaluating backtesting results, and finally returning a quantitative analysis result report in JSON format containing real-time trading signals.")
-def quant_analysis(symbol: str, strategy: Dict[str, Any]) -> Dict[str, Any]:
+@tool("quant_analysis")
+def quant_analysis(symbol: str, strategy: dict) -> dict:
     """
-    Run quantitative trading backtest
-    
-    Args:
-        symbol: Asset code, e.g. 'AAPL'
-        strategy: Strategy configuration dictionary, containing strategy parameters
-        
-    Returns:
-        Dict[str, Any]: Backtest result report
+    Performs quantitative analysis based on the given symbol and trading strategy.
+    It retrieves historical data, calculates indicators, generates real-time signals,
+    runs backtesting, and returns a JSON report.
     """
     try:
         # 1. Get historical data
         historical_data = get_historical_data(symbol)
         if historical_data is None:
             raise ValueError(f"Failed to get historical data for asset {symbol}")
+        logger.info(f"got historical_data")
             
         # 2. Calculate technical indicators
         data_with_indicators = calculate_indicators(historical_data)
         if data_with_indicators is None:
             raise ValueError("Failed to calculate technical indicators")
+        logger.info(f"calculated indicators")
             
         # 3. Get real-time trading signal
         try:
@@ -293,6 +293,7 @@ def quant_analysis(symbol: str, strategy: Dict[str, Any]) -> Dict[str, Any]:
         except Exception as e:
             logger.warning(f"Failed to get real-time trading signal: {str(e)}")
             live_signal = "HOLD"  # Default hold
+        logger.info(f"generated live signal: {live_signal}")
             
         # 4. Run backtest
         backtest_result = backtest_strategy(
@@ -300,10 +301,10 @@ def quant_analysis(symbol: str, strategy: Dict[str, Any]) -> Dict[str, Any]:
             strategy=strategy,
             initial_capital=INITIAL_CAPITAL
         )
-        
+        logger.info(f"backtest result: {backtest_result}")
         # 5. Evaluate backtest results
         evaluation = evaluate_backtest(backtest_result)
-        
+        logger.info(f"evaluation result: {evaluation}")
         # 6. Generate backtest report
         report = {
             'status': 'success',
@@ -331,31 +332,30 @@ def quant_analysis(symbol: str, strategy: Dict[str, Any]) -> Dict[str, Any]:
             'error': str(e)
         }
     
-def generate_live_signal(data: pd.DataFrame, strategy: Dict[str, Any]) -> Dict[str, Any]:
+def generate_live_signal(data: pd.DataFrame, strategy: Dict[str, Any]) -> str:
     """
-    Generate a live trading signal using LLM based on live data and trading strategy
+    Generate live trading signal based on the latest data and strategy
     
     Args:
-        data: Live data, containing technical indicators
+        data: DataFrame containing historical prices and technical indicators
         strategy: Strategy configuration dictionary
         
     Returns:
-        Dict[str, Any]: The dictionary containing the trading signal
+        str: The trading signal (BUY/SELL/HOLD)
     """
     try:
-        # Get the latest data point
+        # Get latest data
         latest_data = data.iloc[-1]
         
         # Build prompt
         prompt = f"""
         You are an expert quant trader.
-        Please determine whether to buy, sell, or hold based on the following technical indicator data and trading strategy:
+        Please determine whether to buy, sell, or hold based on the following data:
         
-        Current price: {latest_data['CLOSE']}
-        Technical indicators:
-        {json.dumps({indicator: latest_data[indicator] for indicator in strategy['indicators']}, indent=2)}
+        Latest Market Data:
+        {json.dumps(latest_data.to_dict(), indent=2, ensure_ascii=False)}
         
-        Trading strategy:
+        Trading Strategy:
         {json.dumps(strategy, indent=2, ensure_ascii=False)}
         
         Please only answer: BUY, SELL or HOLD
@@ -363,18 +363,19 @@ def generate_live_signal(data: pd.DataFrame, strategy: Dict[str, Any]) -> Dict[s
         
         # Call LLM to get signal
         response = llm.invoke(prompt)
-        signal = response.strip().upper()
+        # 获取 AIMessage 的内容
+        signal = response.content.strip().upper()
+        logger.info(f"generated live signal: {signal}")
         
         # Validate signal validity
         if signal not in ["BUY", "SELL", "HOLD"]:
             signal = "HOLD"  # Default hold
             
-        # Return signal details
         return signal
         
     except Exception as e:
-        logger.error(f"Error generating trading signal: {str(e)}")
-        raise 
+        logger.error(f"Error generating live signal: {str(e)}", exc_info=True)
+        return "HOLD"  # Default to HOLD on error
 
 # Initialize LLM and parser
 llm = ChatOpenAI(model="gpt-4o", temperature=0.2)    

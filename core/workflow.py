@@ -5,6 +5,8 @@ import pandas as pd
 import logging
 from datetime import datetime, timedelta
 from core.agents.function_call_agent import function_call_agent
+from core.tools.strategy_generation import generate_strategy
+import json
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -105,17 +107,18 @@ def generate_trading_strategy_node(state: WorkflowState) -> WorkflowState:
         if state.get('symbol') is None:
             logger.error("Asset code not obtained")
             raise ValueError("Asset code not obtained")           
-        # Generate trading strategy
-        task = f"Please generate a trading strategy for the asset {state['symbol']}"
-        trading_strategy = function_call_agent.run(task)
         
-        if trading_strategy is None:
+        # 直接调用 generate_strategy 函数
+        strategy = generate_strategy()
+        
+        if strategy is None:
             logger.error("Generating trading strategy failed")
             raise ValueError("Generating trading strategy failed")
             
         # Update state
-        state['trading_strategy'] = safe_serialize(trading_strategy)
+        state['trading_strategy'] = strategy
         logger.info("Trading strategy generated")
+        logger.info(f"Trading strategy content: {json.dumps(strategy, indent=2, ensure_ascii=False)}")
 
         # Increase the number of attempts
         state['strategy_attempts'] = state.get('strategy_attempts', 0) + 1
@@ -123,39 +126,44 @@ def generate_trading_strategy_node(state: WorkflowState) -> WorkflowState:
         return state
     except Exception as e:
         logger.error(f"Generating trading strategy error: {str(e)}")
-        raise    
+        raise
 
 def quant_analysis_node(state: WorkflowState) -> WorkflowState:
-    """Quantitative analysis node"""
+    """Run quantitative analysis"""
     try:
         logger.info("Running quantitative analysis")
         
-        # Check necessary state
+        # 检查必要的状态
         if state.get('symbol') is None:
             logger.error("Asset code not obtained")
             raise ValueError("Asset code not obtained")
         if state.get('trading_strategy') is None:
             logger.error("Trading strategy not obtained")
-            raise ValueError("Trading strategy not obtained")  
-        # Run backtest
-        task = f"Please perform quantitative analysis based on the asset code {state['symbol']} and trading strategy {state['trading_strategy']}"
-        quant_analysis_results = function_call_agent.run(task)
+            raise ValueError("Trading strategy not obtained")
+            
+        # 打印 trading_strategy 的内容
+        logger.info(f"Trading strategy content: {json.dumps(state['trading_strategy'], indent=2, ensure_ascii=False)}")
+            
+        # 运行量化分析
+        result = function_call_agent.run({
+            "input": {
+                "symbol": state["symbol"],
+                "strategy": state["trading_strategy"]
+            }
+        })
         
-        if quant_analysis_results is None:
+        if result is None:
             logger.error("Quantitative analysis failed")
             raise ValueError("Quantitative analysis failed")
             
-        # Update state
-        state['quant_analysis_results'] = safe_serialize(quant_analysis_results)
+        # 更新状态
+        state['quant_analysis'] = result
         logger.info("Quantitative analysis completed")
         
         return state
     except Exception as e:
         logger.error(f"Quantitative analysis error: {str(e)}")
         raise
-
-
-
 
 def analyze_market_sentiment_node(state: WorkflowState) -> WorkflowState:
     """Analyze market sentiment node"""
@@ -182,7 +190,6 @@ def analyze_market_sentiment_node(state: WorkflowState) -> WorkflowState:
     except Exception as e:
         logger.error(f"Market sentiment analysis error: {str(e)}")
         raise
-
 
 def generate_final_report_node(state: WorkflowState) -> WorkflowState:
     """Generate final report node"""
