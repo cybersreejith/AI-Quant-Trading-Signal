@@ -7,7 +7,7 @@ from langchain.prompts import ChatPromptTemplate
 from langchain.output_parsers import PydanticOutputParser
 from pydantic import BaseModel, Field
 from datetime import datetime
-from langchain.agents import tool
+from langchain_core.tools import tool
 import json
 
 # Load environment variables
@@ -96,17 +96,10 @@ class ReportAgent:
         # Output parser
         self.output_parser = PydanticOutputParser(pydantic_object=TradingReport)
         
-    @tool("Generate a comprehensive analysis report based on the provided original quantitative analysis and market sentiment analysis")        
+    @tool("generate_report")        
     def generate_report(self, quant_analysis_result: Dict[str, Any], market_sentiment_result: Dict[str, Any]) -> Dict[str, Any]:
         """
-        Generate trading analysis report
-        
-        Args:
-            quant_analysis_result: Quantitative analysis result JSON object
-            market_sentiment_result: Market sentiment analysis result JSON object
-            
-        Returns:
-            Generated trading analysis report
+        Generate a comprehensive analysis report based on the provided original quantitative analysis and market sentiment analysis
         """
         try:
             logger.info("Starting to generate trading analysis report")

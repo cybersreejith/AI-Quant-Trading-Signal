@@ -74,8 +74,7 @@ const Trading: React.FC = () => {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          symbol: symbol,
-          asset_type: assetType
+          symbol: symbol
         })
       });
 
@@ -89,8 +88,14 @@ const Trading: React.FC = () => {
       setLoading(false);
       message.success('Analysis completed');
       
-      // 可以在这里处理返回的数据
-      console.log('Analysis result:', data);
+      // 导航到Report页面，并传递分析数据
+      navigate('/report', { 
+        state: { 
+          analysisData: data,
+          symbol: symbol,
+          timestamp: new Date().toISOString()
+        }
+      });
       
     } catch (error) {
       setLoading(false);

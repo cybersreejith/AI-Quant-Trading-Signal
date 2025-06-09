@@ -6,7 +6,7 @@ Contains all technical indicator parameter spaces, field definitions, and rule t
 from langchain.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import JsonOutputParser
 from langchain.chat_models.openai import ChatOpenAI
-from langchain.agents import tool
+from langchain_core.tools import tool
 import json
 import textwrap
 from typing import Dict, Any
@@ -27,40 +27,105 @@ def build_prompt(indicator_meta: dict,
     Returns:
         ChatPromptTemplate: The assembled prompt template
     """
-    system_part = textwrap.dedent(f"""
+    system_part = textwrap.dedent("""
         You are an expert quant trader.
-        Design a trading strategies **ONLY** with the indicators below.
-        Output must pass the JSON schema, no extra text.
-
-        ## JSON Schema
-        {json.dumps(schema, indent=2)}
+        Design only one trading strategy using ONLY the indicators provided below.
+        
+        IMPORTANT: You must output ONLY a JSON object that strictly follows this schema:
+        {schema}
+        
+        Example of valid output format:
+        {{
+            "name": "Strategy Name",
+            "indicators": ["SMA", "RSI"],
+            "params": {{
+                "SMA": {{"period": 50}},
+                "RSI": {{"period": 14, "th_low": 30, "th_high": 70}}
+            }},
+            "rule": "close > SMA and RSI < 30"
+        }}
+        
+        DO NOT include any additional text, explanations, or markdown formatting.
+        The output must be a valid JSON object that can be parsed directly.
+        DO NOT add any text before or after the JSON object.
     """)
     
-    user_part = f"### INDICATORS\n{json.dumps(indicator_meta, indent=2, ensure_ascii=False)}"
+    user_part = "### AVAILABLE INDICATORS\n{indicators}"
 
-    return ChatPromptTemplate.from_messages(
-        [("system", system_part), ("user", user_part)]
-    )
-@tool("Generate a quantitative trading strategy")
+    return ChatPromptTemplate.from_messages([
+        ("system", system_part),
+        ("user", user_part)
+    ])
+
 def generate_strategy() -> dict:
     """
     Generate a single trading strategy
-    
-    Returns:
-        dict: The generated strategy, containing the name, indicators, params, and rule fields
     """
-    # Build prompt template
-    prompt = build_prompt(INDICATOR_META, STRAT_SCHEMA)
-    
-    parser = JsonOutputParser()
-    
-    # Combine into Chain: Prompt → LLM → JSON parsing
-    chain = prompt | llm | parser
-    
-    # Execute Chain to generate strategy
-    spec_list = chain.invoke({})
-    return spec_list[0]  # Only return the first strategy
+    try:
+        # Build prompt template
+        prompt = build_prompt(INDICATOR_META, STRAT_SCHEMA)
+        
+        parser = JsonOutputParser()
+        
+        # Combine into Chain: Prompt → LLM → JSON parsing
+        chain = prompt | llm | parser
+        
+        # Execute Chain to generate strategy with required variables
+        result = chain.invoke({
+            "schema": json.dumps(STRAT_SCHEMA, indent=2),
+            "indicators": json.dumps(INDICATOR_META, indent=2, ensure_ascii=False)
+        })
+        
+        # 处理返回值
+        if isinstance(result, list) and len(result) > 0:
+            strategy = result[0]
+        else:
+            strategy = result
+            
+        # 如果返回的是字符串，尝试解析为字典
+        if isinstance(strategy, str):
+            try:
+                # 尝试从字符串中提取 JSON 部分
+                json_str = strategy.split('}')[0] + '}'
+                strategy = json.loads(json_str)
+            except json.JSONDecodeError:
+                # 如果解析失败，返回默认策略
+                strategy = {
+                    "name": "Default Strategy",
+                    "indicators": ["SMA", "RSI"],
+                    "params": {
+                        "SMA": {"period": 50},
+                        "RSI": {"period": 14, "th_low": 30, "th_high": 70}
+                    },
+                    "rule": "close > SMA and RSI < 30"
+                }
+        
+        # 确保返回的是字典
+        if not isinstance(strategy, dict):
+            strategy = {
+                "name": "Default Strategy",
+                "indicators": ["SMA", "RSI"],
+                "params": {
+                    "SMA": {"period": 50},
+                    "RSI": {"period": 14, "th_low": 30, "th_high": 70}
+                },
+                "rule": "close > SMA and RSI < 30"
+            }
+            
+        return strategy
+        
+    except Exception as e:
+        logger.error(f"Error generating strategy: {str(e)}")
+        # 发生错误时返回默认策略
+        return {
+            "name": "Default Strategy",
+            "indicators": ["SMA", "RSI"],
+            "params": {
+                "SMA": {"period": 50},
+                "RSI": {"period": 14, "th_low": 30, "th_high": 70}
+            },
+            "rule": "close > SMA and RSI < 30"
+        }
 
-# Initialize LLM and parser
-llm = ChatOpenAI(model="gpt-4o", temperature=0.2)   
+llm = ChatOpenAI(model="gpt-4o", temperature=0.2)       
 
