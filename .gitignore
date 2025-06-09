@@ -55,7 +55,6 @@ backtest_data/
 *.csv
 *.xlsx
 *.xls
-*.json
 *.pkl
 *.h5
 
