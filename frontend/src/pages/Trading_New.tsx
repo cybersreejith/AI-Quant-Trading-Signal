@@ -60,6 +60,9 @@ const Trading: React.FC = () => {
     { value: "crypto", label: "Crypto" },
   ];
 
+  const HIGHLIGHT = "#36cfc9";
+  const ACCENT = "#4096ff";
+
   const assetLists = {
     stock: [
       "AAPL",
@@ -362,29 +365,33 @@ const Trading: React.FC = () => {
             <UserOutlined
               style={{ fontSize: 64, color: GOLD, marginBottom: 12 }}
             />
-            <Title level={4} style={{ color: GOLD, margin: "12px 0 0 0" }}>
+            <Title level={4} style={{ color: JPM_BLUE, margin: "12px 0 0 0" }}>
               J.P. Morgan Financial Advisor
             </Title>
-            <Paragraph
-              style={{ color: JPM_BLUE, fontSize: 16, margin: "18px 0 0 0" }}
+            {/* <Paragraph
+              style={{ color: HIGHLIGHT, fontSize: 14, margin: "18px 0 0 0" }}
             >
               <b>
                 Unlock the power of institutional-grade trading with expert
                 guidance.
               </b>
-              <br />
-              <span style={{ color: GOLD }}>
-                Our advisors help you maximize returns, manage risk, and
-                streamline your workflow.
-              </span>
-              <br />
               <span
                 style={{ color: JPM_BLUE, display: "block", marginTop: 16 }}
               >
                 Personalized strategies, global market insights, and dedicated
                 support for your institution.
               </span>
+            </Paragraph> */}
+
+            <Paragraph>
+              <span
+                style={{ color: JPM_BLUE, display: "block", marginTop: 16 }}
+              >
+                Unlock the power of institutional-grade trading with expert
+                guidance.
+              </span>
             </Paragraph>
+
             <Button
               type="primary"
               size="large"
@@ -440,7 +447,7 @@ const Trading: React.FC = () => {
                   <StarFilled
                     style={{ color: GOLD, fontSize: 36, marginBottom: 10 }}
                   />
-                  <Title level={5} style={{ color: GOLD, margin: 0 }}>
+                  <Title level={5} style={{ color: JPM_BLUE, margin: 0 }}>
                     Trusted Expertise
                   </Title>
                   <Paragraph style={{ color: JPM_BLUE, margin: "8px 0 0 0" }}>
@@ -473,7 +480,7 @@ const Trading: React.FC = () => {
                   <SafetyCertificateOutlined
                     style={{ color: GOLD, fontSize: 36, marginBottom: 10 }}
                   />
-                  <Title level={5} style={{ color: GOLD, margin: 0 }}>
+                  <Title level={5} style={{ color: JPM_BLUE, margin: 0 }}>
                     Compliance & Security
                   </Title>
                   <Paragraph style={{ color: JPM_BLUE, margin: "8px 0 0 0" }}>
@@ -516,7 +523,7 @@ const Trading: React.FC = () => {
                   <ThunderboltOutlined
                     style={{ color: GOLD, fontSize: 36, marginBottom: 10 }}
                   />
-                  <Title level={5} style={{ color: GOLD, margin: 0 }}>
+                  <Title level={5} style={{ color: JPM_BLUE, margin: 0 }}>
                     AI-Driven Efficiency
                   </Title>
                   <Paragraph style={{ color: JPM_BLUE, margin: "8px 0 0 0" }}>
@@ -550,12 +557,12 @@ const Trading: React.FC = () => {
                   <FundProjectionScreenOutlined
                     style={{ color: GOLD, fontSize: 36, marginBottom: 10 }}
                   />
-                  <Title level={5} style={{ color: GOLD, margin: 0 }}>
+                  <Title level={5} style={{ color: JPM_BLUE, margin: 0 }}>
                     Proven Cost Savings
                   </Title>
                   <Paragraph style={{ color: JPM_BLUE, margin: "8px 0 0 0" }}>
                     <b>
-                      Save up to <span style={{ color: GOLD }}>40%</span> on
+                      Save up to <span style={{ color: "BROWN" }}>40%</span> on
                       research and compliance costs
                     </b>{" "}
                     by integrating our AI platform with your operations.

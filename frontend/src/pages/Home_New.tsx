@@ -8,6 +8,13 @@ const JPM_BLUE = "#003366";
 const JPM_GRADIENT = "linear-gradient(90deg, #003366 0%, #00539B 100%)";
 const GOLD = "#FFD700";
 
+const gridBgColors = [
+  "linear-gradient(135deg,rgb(212, 202, 151) 0%, #f9f9f6 100%)", // Soft yellow/cream
+  "linear-gradient(135deg,rgb(177, 213, 204) 0%, #f6f9fb 100%)", // Soft teal
+  "linear-gradient(135deg,rgb(210, 195, 218) 0%, #f9f6ff 100%)", // Soft purple
+  "linear-gradient(135deg,rgb(162, 181, 203) 0%, #f6f9fb 100%)", // Soft blue
+];
+
 const Home: React.FC = () => {
   const navigate = useNavigate();
 
@@ -303,17 +310,25 @@ const Home: React.FC = () => {
               <Col xs={24} md={6}>
                 <Card
                   style={{
-                    background: JPM_GRADIENT,
+                    background: gridBgColors[0],
                     border: "none",
                     borderRadius: 12,
-                    color: "#fff",
+                    color: JPM_BLUE,
+                    height: "100%",
+                    display: "flex",
+                    flexDirection: "column",
                   }}
-                  bodyStyle={{ minHeight: 140 }}
+                  bodyStyle={{
+                    minHeight: 180,
+                    height: "100%",
+                    display: "flex",
+                    flexDirection: "column",
+                  }}
                 >
-                  <Title level={4} style={{ color: GOLD }}>
+                  <Title level={4} style={{ color: JPM_BLUE }}>
                     Select Asset Type
                   </Title>
-                  <Paragraph style={{ color: "#fff" }}>
+                  <Paragraph style={{ color: JPM_BLUE }}>
                     Support a variety of asset types such as global stocks,
                     ETFs, foreign exchange, and cryptocurrencies
                   </Paragraph>
@@ -322,17 +337,25 @@ const Home: React.FC = () => {
               <Col xs={24} md={6}>
                 <Card
                   style={{
-                    background: JPM_GRADIENT,
+                    background: gridBgColors[1],
                     border: "none",
                     borderRadius: 12,
-                    color: "#fff",
+                    color: JPM_BLUE,
+                    height: "100%",
+                    display: "flex",
+                    flexDirection: "column",
                   }}
-                  bodyStyle={{ minHeight: 140 }}
+                  bodyStyle={{
+                    minHeight: 180,
+                    height: "100%",
+                    display: "flex",
+                    flexDirection: "column",
+                  }}
                 >
-                  <Title level={4} style={{ color: GOLD }}>
+                  <Title level={4} style={{ color: JPM_BLUE }}>
                     View Reference List
                   </Title>
-                  <Paragraph style={{ color: "#fff" }}>
+                  <Paragraph style={{ color: JPM_BLUE }}>
                     Provide a rich asset code reference, convenient for quick
                     selection
                   </Paragraph>
@@ -341,17 +364,25 @@ const Home: React.FC = () => {
               <Col xs={24} md={6}>
                 <Card
                   style={{
-                    background: JPM_GRADIENT,
+                    background: gridBgColors[2],
                     border: "none",
                     borderRadius: 12,
-                    color: "#fff",
+                    color: JPM_BLUE,
+                    height: "100%",
+                    display: "flex",
+                    flexDirection: "column",
                   }}
-                  bodyStyle={{ minHeight: 140 }}
+                  bodyStyle={{
+                    minHeight: 180,
+                    height: "100%",
+                    display: "flex",
+                    flexDirection: "column",
+                  }}
                 >
-                  <Title level={4} style={{ color: GOLD }}>
+                  <Title level={4} style={{ color: JPM_BLUE }}>
                     Input Trading Pair
                   </Title>
-                  <Paragraph style={{ color: "#fff" }}>
+                  <Paragraph style={{ color: JPM_BLUE }}>
                     Support a variety of trading pair formats to meet different
                     market needs
                   </Paragraph>
@@ -360,17 +391,25 @@ const Home: React.FC = () => {
               <Col xs={24} md={6}>
                 <Card
                   style={{
-                    background: JPM_GRADIENT,
+                    background: gridBgColors[3],
                     border: "none",
                     borderRadius: 12,
-                    color: "#fff",
+                    color: JPM_BLUE,
+                    height: "100%",
+                    display: "flex",
+                    flexDirection: "column",
                   }}
-                  bodyStyle={{ minHeight: 140 }}
+                  bodyStyle={{
+                    minHeight: 180,
+                    height: "100%",
+                    display: "flex",
+                    flexDirection: "column",
+                  }}
                 >
-                  <Title level={4} style={{ color: GOLD }}>
+                  <Title level={4} style={{ color: JPM_BLUE }}>
                     Generate Trading Report
                   </Title>
-                  <Paragraph style={{ color: "#fff" }}>
+                  <Paragraph style={{ color: JPM_BLUE }}>
                     Generate professional trading suggestion reports based on AI
                     analysis
                   </Paragraph>
@@ -380,7 +419,7 @@ const Home: React.FC = () => {
           </Card>
         </Col>
       </Row>
-
+      {/* Custom CSS animations 
       <style>
         {`
           @keyframes gridMove {
@@ -417,6 +456,7 @@ const Home: React.FC = () => {
           }
         `}
       </style>
+     */}
     </div>
   );
 };

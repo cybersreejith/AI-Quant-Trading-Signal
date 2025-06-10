@@ -23,7 +23,7 @@ const JPMFooter: React.FC = () => (
       marginTop: 48,
       background: "#002244",
       color: "#fff",
-      borderRadius: 12,
+      borderRadius: 0,
       padding: "32px 16px 24px 16px",
       textAlign: "center",
       boxShadow: "0 2px 12px rgba(0,83,155,0.10)",
