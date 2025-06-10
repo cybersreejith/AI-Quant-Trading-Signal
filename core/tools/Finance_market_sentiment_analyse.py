@@ -68,13 +68,31 @@ class SentimentAgent:
         """Set the prompt template"""
         # News analysis prompt template
         self.news_analysis_prompt = ChatPromptTemplate.from_messages([
-            ("system", """You are a professional market sentiment analyst. Please combine the following background material and news content to extract key information and evaluate market sentiment.
+            ("system", """
+            You are a professional market sentiment analyst. Please combine the following background material and news content to extract key information and evaluate market sentiment.
             Output includes:
             1. Overall market sentiment (positive/neutral/negative)
             2. Sentiment score (-1 to 1)
             3. Key points analysis (list form)
             4. Analysis confidence (0 to 1)
-            5. News content summary (within 200 words)"""),
+            5. News content summary (within 200 words)
+            
+            
+            
+            Example of valid output format:
+            {{
+                "overall_sentiment": "positive",
+                "sentiment_score": 0.2,
+                "key_points": ["profitable", "strong cash flow", "innovation"],
+                "confidence": 0.7,
+                "news_summary": "This is the summary of the news"
+            }}
+        
+            DO NOT include any additional text, explanations, or markdown formatting.
+            The output must be a valid JSON object that can be parsed directly.
+            DO NOT add any text before or after the JSON object.
+            
+            """),
             ("user", "【Background information】\n{extra_context}\n\n【News content】\n{news_content}")
         ])
         
@@ -101,8 +119,9 @@ class SentimentAgent:
             formatted_articles = []
             for article in news:
                 # Convert timestamp to date string
-                date = datetime.fromtimestamp(article['providerPublishTime']).strftime('%Y-%m-%d %H:%M:%S')
-                url = article['link']
+                print(article['content']['pubDate'])
+                date = article['content']['pubDate']
+                url = article['content']['canonicalUrl']['url']
                 
                 # Get the full text content
                 full_text = ""
@@ -115,11 +134,11 @@ class SentimentAgent:
                     logger.warning(f"Failed to fetch body: {e}")   
 
                 formatted_articles.append({
-                    "title": article['title'],
-                    "source": article['publisher'],
+                    "title": article['content']['title'],
+                    "source": article['content']['provider']['displayName'],
                     "date": date,
-                    "summary": article.get('summary', ''),
-                    "url": article['link'],
+                    "summary": article['content']['summary'],
+                    "url": url,
                     "content": full_text
                 })
                 
@@ -187,7 +206,7 @@ class SentimentAgent:
             return {
                 "error": str(e)
             }
-    @tool("analyze_market_sentiment")            
+    #@tool("analyze_market_sentiment")
     def analyze_market_sentiment(self, symbol: str) -> Dict[str, Any]:
         """
         Analyze market sentiment based on news content of a specific asset
@@ -213,4 +232,4 @@ class SentimentAgent:
             logger.error(f"Error analyzing market sentiment: {str(e)}")
             return {
                 "error": str(e)
-            } 
+            }
