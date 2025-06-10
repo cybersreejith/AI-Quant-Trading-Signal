@@ -39,7 +39,7 @@ const Layout: React.FC = () => {
             flex: "none",
           }}
         >
-          J.P. Morgan Quantitative Trading Platform
+          CHASE
         </div>
         <Menu
           theme="dark"

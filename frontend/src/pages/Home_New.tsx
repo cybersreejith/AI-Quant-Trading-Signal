@@ -50,7 +50,7 @@ const Home: React.FC = () => {
                 marginBottom: 0,
               }}
             >
-              J.P. Morgan Quantitative Trading Platform
+              J.P.Morgan & Chase Quantitative Trading Platform
             </Title>
             <Paragraph
               style={{
@@ -419,7 +419,7 @@ const Home: React.FC = () => {
           </Card>
         </Col>
       </Row>
-      {/* Custom CSS animations 
+      {/* Custom CSS animations   */}
       <style>
         {`
           @keyframes gridMove {
@@ -456,7 +456,6 @@ const Home: React.FC = () => {
           }
         `}
       </style>
-     */}
     </div>
   );
 };
