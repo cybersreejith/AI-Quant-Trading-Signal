@@ -236,17 +236,27 @@ const Trading: React.FC = () => {
       <Card
         style={cardStyle}
         title={
-          <div style={{ display: "flex", alignItems: "center" }}>
-            <Button
-              type="text"
-              icon={<ArrowLeftOutlined />}
-              onClick={() => navigate("/")}
-              style={{ marginRight: 16, color: JPM_BLUE }}
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              width: "100%",
+              padding: "12px 0",
+            }}
+          >
+            <span
+              style={{
+                fontWeight: 800,
+                fontSize: 28,
+                letterSpacing: 1,
+                fontFamily: "Segoe UI, Arial, sans-serif",
+                textAlign: "center",
+                display: "inline-block",
+                color: JPM_BLUE,
+              }}
             >
-              Back
-            </Button>
-            <span style={{ color: JPM_BLUE, fontWeight: 700, fontSize: 20 }}>
-              Generate Trading Signal
+              JPMorgan AI-Powered Institutional Trading Signal
             </span>
           </div>
         }
@@ -282,7 +292,6 @@ const Trading: React.FC = () => {
               ))}
             </Space>
           </Radio.Group>
-
           <Text strong style={{ color: JPM_BLUE }}>
             Asset Code
           </Text>
@@ -292,7 +301,6 @@ const Trading: React.FC = () => {
             value={symbol}
             onChange={(e) => setSymbol(e.target.value)}
           />
-
           {showAssetList && assetType && (
             <div
               style={{ marginBottom: 16, maxHeight: 220, overflowY: "auto" }}
@@ -326,20 +334,39 @@ const Trading: React.FC = () => {
             </div>
           )}
 
-          <Button
-            type="primary"
-            onClick={handleSubmit}
-            style={{
-              width: "100%",
-              height: "44px",
-              background: JPM_GRADIENT,
-              border: "none",
-              fontWeight: 700,
-              fontSize: 16,
-            }}
-          >
-            Start Analyse
-          </Button>
+          <div style={{ display: "flex", gap: 16, marginTop: 8 }}>
+            <Button
+              icon={<ArrowLeftOutlined />}
+              onClick={() => navigate("/")}
+              style={{
+                height: "44px",
+                background: "#fff",
+                color: JPM_BLUE,
+                fontWeight: 700,
+                border: `1px solid ${JPM_BLUE}`,
+                borderRadius: 8,
+                minWidth: 100,
+              }}
+            >
+              Back
+            </Button>
+
+            <Button
+              type="primary"
+              onClick={handleSubmit}
+              style={{
+                flex: 1,
+                height: "44px",
+                background: JPM_GRADIENT,
+                border: "none",
+                fontWeight: 700,
+                fontSize: 16,
+                minWidth: 140,
+              }}
+            >
+              Start Analyse
+            </Button>
+          </div>
         </div>
       </Card>
 

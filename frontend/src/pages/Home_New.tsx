@@ -6,6 +6,9 @@ const { Title, Paragraph } = Typography;
 
 const JPM_BLUE = "#003366";
 const JPM_GRADIENT = "linear-gradient(90deg, #003366 0%, #00539B 100%)";
+const JPM_GRADIENT_2 =
+  "linear-gradient(90deg, rgb(40, 78, 120) 0%, rgb(70, 110, 170) 60%, rgb(90, 120, 160) 100%)";
+
 const GOLD = "#FFD700";
 
 const gridBgColors = [
@@ -32,7 +35,7 @@ const Home: React.FC = () => {
         <Col span={24}>
           <Card
             style={{
-              background: JPM_GRADIENT,
+              background: JPM_GRADIENT_2,
               border: "none",
               borderRadius: 18,
               boxShadow: "0 6px 32px rgba(0,0,0,0.12)",
@@ -207,7 +210,7 @@ const Home: React.FC = () => {
               <Card
                 hoverable
                 style={{
-                  background: JPM_GRADIENT,
+                  background: JPM_GRADIENT_2,
                   border: "none",
                   borderRadius: 16,
                   height: "210px",
@@ -250,7 +253,7 @@ const Home: React.FC = () => {
               <Card
                 hoverable
                 style={{
-                  background: JPM_GRADIENT,
+                  background: JPM_GRADIENT_2,
                   border: "none",
                   borderRadius: 16,
                   height: "210px",
