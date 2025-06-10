@@ -2,9 +2,9 @@ import React from "react";
 import { ConfigProvider } from "antd";
 import zhCN from "antd/locale/zh_CN";
 import { Routes, Route } from "react-router-dom";
-import Layout from "./components/Layout_New";
-import Home from "./pages/Home_New";
-import Trading from "./pages/Trading_New";
+import Layout from "./components/Layout";
+import Home from "./pages/Home";
+import Trading from "./pages/Trading";
 import Report from "./pages/Report";
 import JPMFooter from "./components/Footer";
 
