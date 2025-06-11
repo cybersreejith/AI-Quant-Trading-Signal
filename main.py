@@ -1,8 +1,13 @@
+# Invoke settings.py ?
+from dotenv import load_dotenv
+load_dotenv()
+
+from core.workflow import create_workflow_graph, WorkflowState
 from flask import Flask, request, jsonify
 from flask_cors import CORS
-from core.workflow import create_workflow_graph, WorkflowState
 import logging
 from utils.logger import setup_logger
+
 
 # Configure logging
 logger = setup_logger(__name__)
