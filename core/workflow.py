@@ -109,7 +109,7 @@ def generate_trading_strategy_node(state: WorkflowState) -> WorkflowState:
             logger.error("Asset code not obtained")
             raise ValueError("Asset code not obtained")           
         
-        # 直接调用 generate_strategy 函数
+        # directly call generate_strategy function
         strategy = generate_strategy()
         
         if strategy is None:
@@ -134,14 +134,14 @@ def quant_analysis_node(state: WorkflowState) -> WorkflowState:
     try:
         logger.info("Running quantitative analysis")
         
-        # 检查必要的状态
+        # check necessary state
         if state.get('symbol') is None:
             logger.error("Asset code not obtained")
             raise ValueError("Asset code not obtained")
         if state.get('trading_strategy') is None:
             logger.error("Trading strategy not obtained")
             raise ValueError("Trading strategy not obtained")           
-        # 直接调用 quant_analysis 函数
+        # directly call quant_analysis function
         result = quant_analysis(
             symbol=state["symbol"],
             strategy=state["trading_strategy"]
@@ -151,7 +151,7 @@ def quant_analysis_node(state: WorkflowState) -> WorkflowState:
             logger.error("Quantitative analysis failed")
             raise ValueError("Quantitative analysis failed")
             
-        # 更新状态
+        # update state
         state['quant_analysis'] = result
         logger.info("Quantitative analysis completed")
         

@@ -399,7 +399,7 @@ const Report: React.FC = () => {
       </Card>
 
       <div style={{ display: 'flex', gap: '20px' }}>
-        {/* 历史记录列表 */}
+        {/* history record list */}
         <Card style={{ width: '300px' }}>
           <List
             dataSource={reportHistory}
@@ -427,7 +427,7 @@ const Report: React.FC = () => {
           />
       </Card>
 
-        {/* 报告内容 */}
+        {/* report content */}
         <div style={{ flex: 1 }}>
           {selectedReport ? (
             renderReportContent(selectedReport)

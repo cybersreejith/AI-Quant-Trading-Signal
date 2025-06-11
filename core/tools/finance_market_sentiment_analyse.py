@@ -109,7 +109,7 @@ class SentimentAgent:
             ticker = yf.Ticker(symbol)
             news = ticker.news
             
-            # 限制新闻数量，最多处理前5条
+            # limit news number, only process the first 5 news
             news = news[:5]
             
             # Format news data
@@ -126,8 +126,8 @@ class SentimentAgent:
                     r = requests.get(url, timeout=5)
                     soup = BeautifulSoup(r.text, "html.parser")
                     paragraphs = soup.find_all("p")
-                    full_text = "\n".join(p.get_text() for p in paragraphs[:3] if p.get_text())  # 只取前3段
-                    limited_content = full_text[:300] + "..." if len(full_text) > 300 else full_text  # 限制300字符
+                    full_text = "\n".join(p.get_text() for p in paragraphs[:3] if p.get_text())  # only get the first 3 paragraphs
+                    limited_content = full_text[:300] + "..." if len(full_text) > 300 else full_text  # limit to 300 characters
                 except Exception as e:
                     logger.warning(f"Failed to fetch body: {e}")   
 
@@ -202,7 +202,7 @@ class SentimentAgent:
                 "error": str(e)
             }
 
-# 创建全局agent实例
+# create global agent instance
 _sentiment_agent = SentimentAgent()
 
 @tool("analyze_market_sentiment")

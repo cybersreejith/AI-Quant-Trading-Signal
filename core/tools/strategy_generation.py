@@ -140,13 +140,13 @@ logger = setup_logger(__name__)
 
 def generate_strategy() -> Dict[str, Any]:
     """
-    从预定义的策略配置中随机选择一个策略
+    randomly select a strategy from predefined strategy configurations
     
     Returns:
-        Dict[str, Any]: 随机选择的策略配置
+        Dict[str, Any]: randomly selected strategy configuration
     """
     try:
-        # 从 STRATEGY_CONFIG 中随机选择一个策略
+        # randomly select a strategy from STRATEGY_CONFIG
         strategy = random.choice(STRATEGY_CONFIG)
         logger.info(f"Selected strategy: {strategy['name']}")
         logger.info(f"Strategy configuration:\n{json.dumps(strategy, indent=2, ensure_ascii=False)}")
@@ -154,7 +154,7 @@ def generate_strategy() -> Dict[str, Any]:
         
     except Exception as e:
         logger.error(f"Error selecting strategy: {str(e)}")
-        # 发生错误时返回默认策略
+        # return default strategy when error occurs
         default_strategy = {
             "name": "Default Strategy",
             "indicators": ["SMA", "RSI"],
