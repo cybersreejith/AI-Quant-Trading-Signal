@@ -219,7 +219,7 @@ const Trading: React.FC = () => {
 
       navigate("/report", {
         state: {
-          analysisData: data,
+          analysisData: data.data, // extract data from data field
           symbol: symbol,
           timestamp: new Date().toISOString(),
         },

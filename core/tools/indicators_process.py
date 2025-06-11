@@ -58,19 +58,19 @@ def calculate_indicators(data: pd.DataFrame) -> pd.DataFrame:
     :return: DataFrame with added technical indicators
     """
     try:
-        # 将时间索引转换为列（如果已经是列则跳过）
+        # convert time index to column (if already a column, skip)
         if 'Date' in data.columns:
             data = data.rename(columns={'Date': 'datetime'})
         elif data.index.name == 'Date':
             data = data.reset_index()
             data = data.rename(columns={'Date': 'datetime'})
         
-        # 确保datetime列的数据类型正确
+        # ensure datetime column has correct data type
         data['datetime'] = pd.to_datetime(data['datetime'])
         
-        # 确保数据列名小写
+        # ensure data column names are lowercase
         column_mapping = {
-            'datetime': 'datetime',  # 保持datetime列名不变
+            'datetime': 'datetime',  # keep datetime column name unchanged
             'Open': 'open',
             'High': 'high',
             'Low': 'low',
@@ -80,7 +80,7 @@ def calculate_indicators(data: pd.DataFrame) -> pd.DataFrame:
             'Stock_Splits': 'stock_splits'
         }
         
-        # 只重命名存在的列
+        # only rename existing columns
         existing_columns = [col for col in column_mapping.keys() if col in data.columns]
         data = data.rename(columns={col: column_mapping[col] for col in existing_columns})
         

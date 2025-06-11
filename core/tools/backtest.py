@@ -46,7 +46,7 @@ class BacktestEngine:
             logger.error("No data provided for backtest")
             raise ValueError("No data provided for backtest")
             
-        # 确保列名小写
+        # ensure column names are lowercase
         data = data.copy()
         data.columns = [col.lower() for col in data.columns]
             
@@ -59,21 +59,21 @@ class BacktestEngine:
         logger.info(f"Data columns: {data.columns.tolist()}")
         logger.info(f"Data first row: {data.iloc[0].to_dict() if len(data) > 0 else 'No data'}")
         
-        # 确保datetime列的数据类型正确
+        # ensure datetime column has correct data type
         if 'datetime' in data.columns:
             data['datetime'] = pd.to_datetime(data['datetime'])
         
-        # 确保数值列的数据类型正确
+        # ensure numeric columns have correct data types
         for col in ['open', 'high', 'low', 'close', 'volume']:
             data[col] = pd.to_numeric(data[col], errors='coerce')
         
-        # 检查空值
+        # check for null values
         null_counts = data[required_columns].isnull().sum()
         if null_counts.any():
             logger.error(f"Data contains null values: {null_counts[null_counts > 0].to_dict()}")
             raise ValueError("Data contains null values")
         
-        # 创建数据源
+        # create data source
         data_feed = bt.feeds.PandasData(
             dataname=data,
             datetime='datetime',
@@ -85,11 +85,11 @@ class BacktestEngine:
             openinterest=-1
         )
         
-        # 添加数据到回测引擎
+        # add data to backtest engine
         logger.info("Adding data to backtest engine")
         self.cerebro.adddata(data_feed)
         
-        # 验证数据是否成功添加
+        # verify data is successfully added
         if not self.cerebro.datas:
             logger.error("No data added to backtest engine")
             raise ValueError("Failed to add data to backtest engine")
@@ -107,9 +107,9 @@ class BacktestEngine:
         logger.info(f"Adding strategy: {strategy_config.get('name', 'Unnamed Strategy')}")
         logger.debug(f"Strategy configuration: {json.dumps(strategy_config, indent=2, ensure_ascii=False)}")
         
-        # 处理规则格式
+        # process rule format
         if isinstance(strategy_config['rule'], str):
-            # 如果是字符串格式，转换为列表格式
+            # if string format, convert to list format
             strategy_config['rule'] = [
                 {
                     "type": "entry",
@@ -128,29 +128,29 @@ class BacktestEngine:
             def __init__(self):
                 super().__init__()
                 self.warmup_period = 0
-                self.previous_values = {}  # 存储前一个周期的值
-                self.manual_indicators = {}  # 存储手动计算的指标值
+                self.previous_values = {}  # store previous period values
+                self.manual_indicators = {}  # store manually calculated indicator values
                 logger.info("Strategy initialized - using manual indicators only")
                 
             def calculate_manual_crossover(self, current_value, reference_value, prev_current, prev_reference):
                 """
-                手动计算交叉信号
-                返回: 1 (向上交叉), -1 (向下交叉), 0 (无交叉)
+                manually calculate crossover signal
+                return: 1 (upward crossover), -1 (downward crossover), 0 (no crossover)
                 """
                 if prev_current is None or prev_reference is None:
                     return 0.0
                 
-                # 向上交叉：当前值 > 参考值 且 前一个值 <= 前一个参考值
+                # upward crossover: current value > reference value and previous value <= previous reference value
                 if current_value > reference_value and prev_current <= prev_reference:
                     return 1.0
-                # 向下交叉：当前值 < 参考值 且 前一个值 >= 前一个参考值  
+                # downward crossover: current value < reference value and previous value >= previous reference value  
                 elif current_value < reference_value and prev_current >= prev_reference:
                     return -1.0
                 else:
                     return 0.0
                     
             def calculate_sma(self, period):
-                """计算SMA"""
+                """calculate SMA"""
                 try:
                     if len(self.data) >= period:
                         prices = [self.data.close[-i] for i in range(period)]
@@ -160,12 +160,12 @@ class BacktestEngine:
                     return 0.0
                     
             def calculate_ema(self, period):
-                """计算EMA"""
+                """calculate EMA"""
                 try:
                     if len(self.data) >= period:
                         key = f'EMA_{period}_prev'
                         if key not in self.manual_indicators:
-                            # 初始EMA值使用SMA
+                            # initial EMA value using SMA
                             self.manual_indicators[key] = self.calculate_sma(period)
                         
                         alpha = 2.0 / (period + 1)
@@ -178,7 +178,7 @@ class BacktestEngine:
                     return 0.0
                     
             def calculate_rsi(self, period):
-                """计算RSI"""
+                """calculate RSI"""
                 try:
                     if len(self.data) >= period + 1:
                         gains = []
@@ -201,23 +201,23 @@ class BacktestEngine:
                         rs = avg_gain / avg_loss
                         rsi = 100 - (100 / (1 + rs))
                         return rsi
-                    return 50.0  # 中性值
+                    return 50.0  # neutral value
                 except:
                     return 50.0
                     
             def calculate_adx(self, period):
-                """简化ADX计算"""
-                return 25.0  # 返回中性值
+                """simplify ADX calculation"""
+                return 25.0  # return neutral value
                 
             def calculate_macd(self, fast_period, slow_period, signal_period):
-                """简化MACD计算"""
+                """simplify MACD calculation"""
                 try:
                     if len(self.data) >= max(fast_period, slow_period, signal_period):
                         fast_ema = self.calculate_ema(fast_period)
                         slow_ema = self.calculate_ema(slow_period)
                         macd_line = fast_ema - slow_ema
-                        # 简化信号线计算
-                        signal_line = macd_line * 0.9  # 简化处理
+                        # simplify signal line calculation
+                        signal_line = macd_line * 0.9  # simplified processing
                         return {'macd': macd_line, 'signal': signal_line}
                     return {'macd': 0.0, 'signal': 0.0}
                 except:
@@ -225,7 +225,7 @@ class BacktestEngine:
             
             def next(self):
                 try:
-                    # 计算最小周期
+                    # calculate minimum period
                     min_period = max(
                         strategy_config['params'].get('SMA', {}).get('period', 0),
                         strategy_config['params'].get('EMA', {}).get('period', 0),
@@ -243,11 +243,11 @@ class BacktestEngine:
                     if len(self.broker.get_orders_open()) > 0:
                         return
                     
-                    # 手动计算所有指标值
+                    # manually calculate all indicator values
                     indicator_values = {}
                     indicator_values['close'] = float(self.data.close[0])
                     
-                    # 计算基础指标
+                    # calculate basic indicators
                     for indicator_name in strategy_config['indicators']:
                         params = strategy_config['params'].get(indicator_name, {})
                         
@@ -271,7 +271,7 @@ class BacktestEngine:
                             indicator_values[indicator_name] = macd_result['macd']
                             indicator_values[f"{indicator_name}_SIGNAL"] = macd_result['signal']
                     
-                    # 计算交叉信号
+                    # calculate crossover signal
                     close_price = indicator_values['close']
                     for indicator_name in strategy_config['indicators']:
                         if indicator_name in indicator_values and indicator_name != 'MACD':
@@ -288,7 +288,7 @@ class BacktestEngine:
                             
                             indicator_values[crossover_name] = crossover_signal
                     
-                    # MACD交叉信号
+                    # MACD crossover signal
                     if 'MACD' in strategy_config['indicators']:
                         macd_value = indicator_values.get('MACD', 0.0)
                         macd_signal = indicator_values.get('MACD_SIGNAL', 0.0)
@@ -303,17 +303,17 @@ class BacktestEngine:
                         
                         indicator_values['CrossOver_MACD'] = macd_crossover
                     
-                    # 更新前一个周期的值
+                    # update previous period values
                     self.previous_values['close'] = close_price
                     for indicator_name, value in indicator_values.items():
                         if not indicator_name.startswith('CrossOver'):
                             self.previous_values[indicator_name] = value
                     
-                    # 获取交易规则
+                    # get trading rules
                     entry_rule = next((rule['expr'] for rule in strategy_config['rule'] if rule['type'] == 'entry'), None)
                     exit_rule = next((rule['expr'] for rule in strategy_config['rule'] if rule['type'] == 'exit'), None)
                     
-                    # 执行交易逻辑
+                    # execute trading logic
                     if not self.position:
                         if entry_rule:
                             try:
@@ -422,7 +422,7 @@ def evaluate_backtest(backtest_results: Dict[str, Any]) -> Dict[str, Any]:
         Dict[str, Any]: Dictionary containing detailed evaluation metrics
     """
     try:
-        # 安全获取基础指标
+        # safe getting basic metrics
         total_return = backtest_results.get('total_return', 0.0)
         annual_return = backtest_results.get('annual_return', 0.0)
         max_drawdown = backtest_results.get('max_drawdown', 0.0)
@@ -434,7 +434,7 @@ def evaluate_backtest(backtest_results: Dict[str, Any]) -> Dict[str, Any]:
         sortino_ratio = annual_return / (abs(max_drawdown) + 1e-6)  # Sortino ratio
         calmar_ratio = annual_return / (abs(max_drawdown) + 1e-6)   # Calmar ratio
         
-        # 安全处理交易统计
+        # safe handling of trade statistics
         trades = backtest_results.get('trades', {})
         avg_trade_return = 0.0
         profit_factor = 1.0
@@ -451,7 +451,7 @@ def evaluate_backtest(backtest_results: Dict[str, Any]) -> Dict[str, Any]:
             except Exception as e:
                 logger.warning(f"Could not extract trade PnL data: {str(e)}")
         
-        # 安全处理资金曲线分析
+        # safe handling of equity curve analysis
         equity_curve = backtest_results.get('equity_curve', {})
         volatility = 0.0
         
@@ -464,7 +464,7 @@ def evaluate_backtest(backtest_results: Dict[str, Any]) -> Dict[str, Any]:
             except Exception as e:
                 logger.warning(f"Could not calculate volatility: {str(e)}")
         
-        # 安全计算连续亏损次数
+        # safe calculation of consecutive losses
         consecutive_losses = 0
         max_consecutive_losses = 0
         
@@ -478,7 +478,7 @@ def evaluate_backtest(backtest_results: Dict[str, Any]) -> Dict[str, Any]:
                     else:
                         consecutive_losses = 0
     
-        # 安全计算风险指标
+        # safe calculation of risk metrics
         var_95 = 0.0
         expected_shortfall = 0.0
         
@@ -522,7 +522,7 @@ def evaluate_backtest(backtest_results: Dict[str, Any]) -> Dict[str, Any]:
         }
         
         # Add evaluation conclusion
-        overall_rating = 'Poor'  # 默认评级
+        overall_rating = 'Poor'  # default rating
         if sharpe_ratio > 1.5 and win_rate > 0.6 and abs(max_drawdown) < 0.2:
             overall_rating = 'Excellent'
         elif sharpe_ratio > 1.0 and win_rate > 0.5 and abs(max_drawdown) < 0.3:
@@ -538,18 +538,18 @@ def evaluate_backtest(backtest_results: Dict[str, Any]) -> Dict[str, Any]:
         
         # Analyze strengths and weaknesses
         if sharpe_ratio > 1.0:
-            evaluation_report['conclusion']['strengths'].append('风险调整收益表现优秀')
+            evaluation_report['conclusion']['strengths'].append('risk-adjusted return performance is excellent')
         if win_rate > 0.6:
-            evaluation_report['conclusion']['strengths'].append('胜率较高')
+            evaluation_report['conclusion']['strengths'].append('win rate is high')
         if abs(max_drawdown) < 0.2:
-            evaluation_report['conclusion']['strengths'].append('回撤控制良好')
+            evaluation_report['conclusion']['strengths'].append('drawdown control is good')
             
         if sharpe_ratio < 0.5:
-            evaluation_report['conclusion']['weaknesses'].append('风险调整收益表现较差')
+            evaluation_report['conclusion']['weaknesses'].append('risk-adjusted return performance is poor')
         if win_rate < 0.4:
-            evaluation_report['conclusion']['weaknesses'].append('胜率偏低')
+            evaluation_report['conclusion']['weaknesses'].append('win rate too low')
         if abs(max_drawdown) > 0.3:
-            evaluation_report['conclusion']['weaknesses'].append('回撤过大')
+            evaluation_report['conclusion']['weaknesses'].append('drawdown too large')
         
         # Add is_satisfactory flag based on key metrics
         evaluation_report['is_satisfactory'] = bool(
@@ -591,7 +591,7 @@ def evaluate_backtest(backtest_results: Dict[str, Any]) -> Dict[str, Any]:
             'conclusion': {
                 'overall_rating': 'Error',
                 'strengths': [],
-                'weaknesses': ['评估过程中出现错误']
+                'weaknesses': ['error during evaluation']
             },
             'is_satisfactory': False,
             'error': str(e)
@@ -634,23 +634,29 @@ def quant_analysis(symbol: str, strategy: dict) -> dict:
         # 5. Evaluate backtest results
         evaluation = evaluate_backtest(backtest_result)
         logger.info(f"evaluation result: {evaluation}")
-        # 6. Generate backtest report
+        # 6. Generate backtest report - simplified version, only keep core information
         report = {
             'status': 'success',
             'symbol': symbol,
             'strategy_name': strategy['name'],
-            'backtest_period': {
-                'start_date': historical_data.index[0].strftime('%Y-%m-%d'),
-                'end_date': historical_data.index[-1].strftime('%Y-%m-%d')
+            'live_signal': live_signal,
+            # core performance metrics
+            'key_metrics': {
+                'total_return': f"{evaluation['performance_metrics']['total_return']:.2%}",
+                'sharpe_ratio': round(evaluation['performance_metrics']['sharpe_ratio'], 2),
+                'max_drawdown': f"{evaluation['performance_metrics']['max_drawdown']:.2%}",
+                'win_rate': f"{evaluation['trading_statistics']['win_rate']:.1%}"
             },
-            'live_signal': live_signal,  # Add real-time trading signal
-            'performance_metrics': evaluation['performance_metrics'],
-            'trading_statistics': evaluation['trading_statistics'],
-            'risk_metrics': evaluation['risk_metrics'],
-            'conclusion': evaluation['conclusion'],
-            'is_satisfactory': evaluation['is_satisfactory']  # Add strategy satisfaction flag
+            # simplified conclusion
+            'summary': {
+                'rating': evaluation['conclusion']['overall_rating'],
+                'recommendation': "suggest to use" if evaluation['is_satisfactory'] else "not suggest to use",
+                'key_strength': evaluation['conclusion']['strengths'][0] if evaluation['conclusion']['strengths'] else "no obvious strength",
+                'main_weakness': evaluation['conclusion']['weaknesses'][0] if evaluation['conclusion']['weaknesses'] else "good performance"
+            },
+            'is_satisfactory': evaluation['is_satisfactory']
         }
-        
+        logger.info(f"backtest report: {report}")
         return report
         
     except Exception as e:
@@ -676,11 +682,11 @@ def generate_live_signal(data: pd.DataFrame, strategy: Dict[str, Any]) -> str:
         # Get latest data
         latest_data = data.iloc[-1].copy()
         
-        # 将Timestamp转换为字符串
+        # convert Timestamp to string
         if isinstance(latest_data['datetime'], pd.Timestamp):
             latest_data['datetime'] = latest_data['datetime'].strftime('%Y-%m-%d %H:%M:%S')
         
-        # 将numpy类型转换为Python原生类型
+        # convert numpy type to Python native type
         latest_data_dict = {}
         for key, value in latest_data.items():
             if isinstance(value, (np.int64, np.float64)):
@@ -704,7 +710,7 @@ def generate_live_signal(data: pd.DataFrame, strategy: Dict[str, Any]) -> str:
         
         # Call LLM to get signal
         response = llm.invoke(prompt)
-        # 获取 AIMessage 的内容
+        # get AIMessage content
         signal = response.content.strip().upper()
         logger.info(f"generated live signal: {signal}")
         

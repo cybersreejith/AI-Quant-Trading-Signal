@@ -6,29 +6,42 @@ import { useNavigate, useLocation } from 'react-router-dom';
 
 const { Title, Paragraph } = Typography;
 
-interface AnalysisData {
+// new data structure, match the backend return format
+interface FinalReport {
   quant_analysis: {
-    strategy_performance: string;
+    status: string;
+    symbol: string;
+    strategy_name: string;
+    live_signal: string;
     key_metrics: {
-      total_return: number;
+      total_return: string;
       sharpe_ratio: number;
+      max_drawdown: string;
+      win_rate: string;
+      total_trades?: number;
+      avg_trade_duration?: string;
     };
-    risk_metrics: {
-      max_drawdown: number;
-      volatility: number;
+    summary: {
+      rating: string;
+      recommendation: string;
+      key_strength: string;
+      main_weakness: string;
     };
+    is_satisfactory: boolean;
   };
   market_sentiment: {
     overall_sentiment: string;
-    key_factors: string[];
-    news_impact: string;
+    sentiment_score: number;
+    confidence: number;
+    error?: string;
+    raw_data?: string;
   };
-  recommendations: string[];
-  risk_assessment: {
-    market_risk: string;
-    strategy_risk: string;
-    risk_mitigation: string[];
-  };
+  ai_analysis: string;
+  generated_at: string;
+}
+
+interface AnalysisData {
+  final_report: FinalReport;
 }
 
 interface ReportRecord {
@@ -44,7 +57,7 @@ const Report: React.FC = () => {
   const [reportHistory, setReportHistory] = useState<ReportRecord[]>([]);
   const [selectedReport, setSelectedReport] = useState<ReportRecord | null>(null);
 
-  // 加载历史报告
+  // load history report
   useEffect(() => {
     const history = JSON.parse(localStorage.getItem('reportHistory') || '[]');
     setReportHistory(history.sort((a: ReportRecord, b: ReportRecord) => 
@@ -52,7 +65,7 @@ const Report: React.FC = () => {
     ));
   }, []);
 
-  // 如果有新的分析数据，添加到历史记录
+  // if there is new analysis data, add it to the history record
   useEffect(() => {
     if (location.state) {
       const { analysisData, symbol, timestamp } = location.state as {
@@ -75,7 +88,7 @@ const Report: React.FC = () => {
     }
   }, [location.state]);
 
-  // 如果没有历史记录
+  // if there is no history record
   if (reportHistory.length === 0) {
     return (
       <div style={{ padding: '20px' }}>
@@ -99,9 +112,10 @@ const Report: React.FC = () => {
     );
   }
 
-  // 渲染报告内容
+  // render report content  
   const renderReportContent = (report: ReportRecord) => {
     const { analysisData, symbol, timestamp } = report;
+    const finalReport = analysisData.final_report;
     
     return (
       <>
@@ -120,28 +134,165 @@ const Report: React.FC = () => {
           <Paragraph>
             Analysis Time: {new Date(timestamp).toLocaleString()}
           </Paragraph>
+          <Paragraph>
+            Generated: {finalReport.generated_at}
+          </Paragraph>
         </Card>
 
-        <Card style={{ marginBottom: 24 }}>
-          <ReactECharts option={{
-    title: {
-              text: `${symbol} Trading Signal Analysis`
-    },
-    tooltip: {
-      trigger: 'axis'
-    },
-    xAxis: {
-      type: 'category',
-      data: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
-    },
-    yAxis: {
-      type: 'value'
-    },
-    series: [{
-      data: [820, 932, 901, 934, 1290, 1330, 1320],
-      type: 'line'
-    }]
-          }} />
+        {/* market sentiment and trading signal analysis */}
+        <Card title="Market Sentiment & Trading Signal Analysis" style={{ marginBottom: 24 }}>
+          <ReactECharts 
+            option={{
+              title: {
+                text: `${symbol} Sentiment vs Signal Analysis`,
+                left: 'center'
+              },
+              tooltip: {
+                trigger: 'item',
+                formatter: function(params: any) {
+                  if (params.seriesType === 'gauge') {
+                    return `${params.seriesName}<br/>${params.name}: ${params.value}`;
+                  }
+                  return `${params.name}: ${params.value}`;
+                }
+              },
+              series: [
+                // market sentiment score gauge
+                {
+                  name: 'Market Sentiment Score',
+                  type: 'gauge',
+                  center: ['25%', '50%'],
+                  radius: '60%',
+                  min: -100,
+                  max: 100,
+                  splitNumber: 10,
+                  axisLine: {
+                    lineStyle: {
+                      color: [
+                        [0.3, '#fd666d'],   // negative sentiment area
+                        [0.7, '#fac858'],   // neutral sentiment area
+                        [1, '#67e0e3']      // positive sentiment area
+                      ],
+                      width: 8
+                    }
+                  },
+                  pointer: {
+                    itemStyle: {
+                      color: 'inherit'
+                    }
+                  },
+                  axisTick: {
+                    distance: -30,
+                    length: 8,
+                    lineStyle: {
+                      color: '#fff',
+                      width: 2
+                    }
+                  },
+                  splitLine: {
+                    distance: -30,
+                    length: 30,
+                    lineStyle: {
+                      color: '#fff',
+                      width: 4
+                    }
+                  },
+                  axisLabel: {
+                    color: 'inherit',
+                    distance: 40,
+                    fontSize: 12,
+                    formatter: function(value: number) {
+                      if (value <= -50) return 'Negative';
+                      if (value >= 50) return 'Positive';
+                      return 'Neutral';
+                    }
+                  },
+                  detail: {
+                    valueAnimation: true,
+                    formatter: '{value}',
+                    color: 'inherit'
+                  },
+                  data: [
+                    {
+                      value: Math.round(finalReport.market_sentiment.sentiment_score * 100),
+                      name: 'Sentiment'
+                    }
+                  ]
+                },
+                // trading signal indicator
+                {
+                  name: 'Trading Signal',
+                  type: 'gauge',
+                  center: ['75%', '50%'],
+                  radius: '60%',
+                  min: -1,
+                  max: 1,
+                  splitNumber: 4,
+                  axisLine: {
+                    lineStyle: {
+                      color: [
+                        [0.25, '#fd666d'],  // SELL area
+                        [0.75, '#fac858'],  // HOLD area
+                        [1, '#67e0e3']      // BUY area
+                      ],
+                      width: 8
+                    }
+                  },
+                  axisLabel: {
+                    distance: 40,
+                    fontSize: 12,
+                    formatter: function(value: number) {
+                      if (value <= -0.5) return 'SELL';
+                      if (value >= 0.5) return 'BUY';
+                      return 'HOLD';
+                    }
+                  },
+                  detail: {
+                    valueAnimation: true,
+                    formatter: function(value: number) {
+                      if (value <= -0.5) return 'SELL';
+                      if (value >= 0.5) return 'BUY';
+                      return 'HOLD';
+                    },
+                    color: 'inherit',
+                    fontSize: 20,
+                    fontWeight: 'bold'
+                  },
+                  data: [
+                    {
+                      value: finalReport.quant_analysis.live_signal === 'BUY' ? 0.8 : 
+                             finalReport.quant_analysis.live_signal === 'SELL' ? -0.8 : 0,
+                      name: 'Signal'
+                    }
+                  ]
+                }
+              ]
+            }}
+            style={{ height: '400px' }}
+          />
+        </Card>
+
+        {/* strategy information card */}
+        <Card title="Strategy Overview" style={{ marginBottom: 24 }}>
+          <Paragraph>
+            <strong>Strategy:</strong> {finalReport.quant_analysis.strategy_name}
+          </Paragraph>
+          <Paragraph>
+            <strong>Live Signal:</strong> 
+            <Tag color={finalReport.quant_analysis.live_signal === 'BUY' ? 'green' : 
+                       finalReport.quant_analysis.live_signal === 'SELL' ? 'red' : 'orange'}>
+              {finalReport.quant_analysis.live_signal}
+            </Tag>
+          </Paragraph>
+          <Paragraph>
+            <strong>Rating:</strong> 
+            <Tag color={finalReport.quant_analysis.summary.rating === 'Poor' ? 'red' : 'green'}>
+              {finalReport.quant_analysis.summary.rating}
+            </Tag>
+          </Paragraph>
+          <Paragraph>
+            <strong>Recommendation:</strong> {finalReport.quant_analysis.summary.recommendation}
+          </Paragraph>
         </Card>
 
         <Card title="Quantitative Analysis" style={{ marginBottom: 24 }}>
@@ -154,67 +305,78 @@ const Report: React.FC = () => {
               {
                 key: '1',
                 metric: 'Total Return',
-                value: `${(analysisData.quant_analysis.key_metrics.total_return * 100).toFixed(2)}%`,
+                value: finalReport.quant_analysis.key_metrics.total_return,
               },
               {
                 key: '2',
                 metric: 'Sharpe Ratio',
-                value: analysisData.quant_analysis.key_metrics.sharpe_ratio.toFixed(2),
+                value: finalReport.quant_analysis.key_metrics.sharpe_ratio.toFixed(2),
               },
               {
                 key: '3',
                 metric: 'Max Drawdown',
-                value: `${(analysisData.quant_analysis.risk_metrics.max_drawdown * 100).toFixed(2)}%`,
+                value: finalReport.quant_analysis.key_metrics.max_drawdown,
               },
               {
                 key: '4',
-                metric: 'Volatility',
-                value: `${(analysisData.quant_analysis.risk_metrics.volatility * 100).toFixed(2)}%`,
+                metric: 'Win Rate',
+                value: finalReport.quant_analysis.key_metrics.win_rate,
               },
+              ...(finalReport.quant_analysis.key_metrics.total_trades ? [{
+                key: '5',
+                metric: 'Total Trades',
+                value: finalReport.quant_analysis.key_metrics.total_trades.toString(),
+              }] : []),
+              ...(finalReport.quant_analysis.key_metrics.avg_trade_duration ? [{
+                key: '6',
+                metric: 'Avg Trade Duration',
+                value: finalReport.quant_analysis.key_metrics.avg_trade_duration,
+              }] : []),
             ]}
           />
+          
+          <div style={{ marginTop: 16 }}>
+            <Paragraph>
+              <strong>Key Strength:</strong> {finalReport.quant_analysis.summary.key_strength}
+            </Paragraph>
+            <Paragraph>
+              <strong>Main Weakness:</strong> {finalReport.quant_analysis.summary.main_weakness}
+            </Paragraph>
+          </div>
         </Card>
 
         <Card title="Market Sentiment" style={{ marginBottom: 24 }}>
           <Paragraph>
-            Overall Sentiment: {analysisData.market_sentiment.overall_sentiment}
+            <strong>Overall Sentiment:</strong> 
+            <Tag color={finalReport.market_sentiment.overall_sentiment === 'positive' ? 'green' : 
+                       finalReport.market_sentiment.overall_sentiment === 'negative' ? 'red' : 'orange'}>
+              {finalReport.market_sentiment.overall_sentiment}
+            </Tag>
           </Paragraph>
           <Paragraph>
-            Key Factors:
-            <ul>
-              {analysisData.market_sentiment.key_factors.map((factor, index) => (
-                <li key={index}>{factor}</li>
-              ))}
-            </ul>
+            <strong>Sentiment Score:</strong> {finalReport.market_sentiment.sentiment_score}
           </Paragraph>
           <Paragraph>
-            News Impact: {analysisData.market_sentiment.news_impact}
+            <strong>Confidence:</strong> {(finalReport.market_sentiment.confidence * 100).toFixed(1)}%
           </Paragraph>
+          {finalReport.market_sentiment.error && (
+            <Paragraph style={{ color: '#ff4d4f' }}>
+              <strong>Note:</strong> {finalReport.market_sentiment.error}
+            </Paragraph>
+          )}
         </Card>
 
-        <Card title="Recommendations" style={{ marginBottom: 24 }}>
-          <ul>
-            {analysisData.recommendations.map((rec, index) => (
-              <li key={index}>{rec}</li>
-            ))}
-          </ul>
-        </Card>
-
-        <Card title="Risk Assessment">
-          <Paragraph>
-            Market Risk: {analysisData.risk_assessment.market_risk}
-          </Paragraph>
-          <Paragraph>
-            Strategy Risk: {analysisData.risk_assessment.strategy_risk}
-          </Paragraph>
-          <Paragraph>
-            Risk Mitigation:
-            <ul>
-              {analysisData.risk_assessment.risk_mitigation.map((mitigation, index) => (
-                <li key={index}>{mitigation}</li>
-              ))}
-            </ul>
-          </Paragraph>
+        <Card title="AI Analysis Report" style={{ marginBottom: 24 }}>
+          <div style={{ 
+            whiteSpace: 'pre-wrap', 
+            lineHeight: '1.6',
+            background: '#f5f5f5',
+            padding: '16px',
+            borderRadius: '6px',
+            border: '1px solid #d9d9d9'
+          }}>
+            {finalReport.ai_analysis}
+          </div>
         </Card>
       </>
     );
@@ -237,7 +399,7 @@ const Report: React.FC = () => {
       </Card>
 
       <div style={{ display: 'flex', gap: '20px' }}>
-        {/* 历史记录列表 */}
+        {/* history record list */}
         <Card style={{ width: '300px' }}>
           <List
             dataSource={reportHistory}
@@ -256,7 +418,7 @@ const Report: React.FC = () => {
                       </span>
                     </div>
                     <div style={{ fontSize: '12px', color: '#666' }}>
-                      {report.analysisData.market_sentiment.overall_sentiment}
+                      {report.analysisData.final_report.market_sentiment.overall_sentiment}
                     </div>
                   </Space>
                 </Button>
@@ -265,7 +427,7 @@ const Report: React.FC = () => {
           />
       </Card>
 
-        {/* 报告内容 */}
+        {/* report content */}
         <div style={{ flex: 1 }}>
           {selectedReport ? (
             renderReportContent(selectedReport)

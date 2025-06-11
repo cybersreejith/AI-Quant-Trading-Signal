@@ -15,13 +15,28 @@ def analyze():
     try:
         # Get request data
         data = request.get_json()
-        symbol = data.get('symbol')
+        if not data:
+            return jsonify({
+                'status': 'error',
+                'message': 'No JSON data provided'
+            }), 400
+            
+        symbol = data.get('symbol', '').strip().upper()
         
+        # Enhanced symbol validation
         if not symbol:
             return jsonify({
                 'status': 'error',
                 'message': 'No asset code provided'
             }), 400
+            
+        if len(symbol) < 1 or len(symbol) > 10:
+            return jsonify({
+                'status': 'error',
+                'message': 'Symbol must be between 1-10 characters'
+            }), 400
+            
+        logger.info(f"Starting analysis for symbol: {symbol}")
             
         # Create workflow graph instance
         workflow_graph = create_workflow_graph()
@@ -31,7 +46,7 @@ def analyze():
             messages=[],
             symbol=symbol,
             trading_strategy=None,
-            quant_analysis_results=None,
+            quant_analysis=None,
             sentiment_analysis=None,
             final_report=None,
             strategy_attempts=0
@@ -56,6 +71,8 @@ def analyze():
             else:
                 return str(obj)
 
+        logger.info(f"Analysis completed successfully for {symbol}")
+        
         return jsonify({
             'status': 'success',
             'data': {
