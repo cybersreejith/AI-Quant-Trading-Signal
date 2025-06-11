@@ -53,7 +53,7 @@ class WorkflowState(TypedDict, total=False):
 
     # === Backtest related ===
     trading_strategy:  NotRequired[Dict[str, Any]]            
-    quant_analysis_results:  NotRequired[Dict[str, Any]]       
+    quant_analysis:  NotRequired[Dict[str, Any]]       
 
     # === Market sentiment ===
     sentiment_analysis: NotRequired[Dict[str, Any]]
@@ -71,17 +71,17 @@ def create_workflow_graph() -> Graph:
     
     # Define nodes
     workflow.add_node("generate_trading_strategy", generate_trading_strategy_node)
-    workflow.add_node("quant_analysis", quant_analysis_node)
+    workflow.add_node("run_quant_analysis", quant_analysis_node)
     workflow.add_node("analyze_market_sentiment", analyze_market_sentiment_node)
     workflow.add_node("generate_final_report", generate_final_report_node)
     
     # Define edges
-    workflow.add_edge("generate_trading_strategy", "quant_analysis")
+    workflow.add_edge("generate_trading_strategy", "run_quant_analysis")
     workflow.add_conditional_edges(
-        "quant_analysis",
+        "run_quant_analysis",
         lambda x: (
             "generate_trading_strategy" 
-            if not x["quant_analysis"]["is_satisfactory"] and x.get("strategy_attempts", 0) < MAX_STRATEGY_ATTEMPTS
+            if not x.get("quant_analysis", {}).get("is_satisfactory", False) and x.get("strategy_attempts", 0) < MAX_STRATEGY_ATTEMPTS
             else "analyze_market_sentiment"
         ),
         {
@@ -195,13 +195,32 @@ def generate_final_report_node(state: WorkflowState) -> WorkflowState:
         if state.get('sentiment_analysis') is None:
             logger.error("Market sentiment analysis result not obtained")
             raise ValueError("Market sentiment analysis result not obtained")
-        if state.get('quant_analysis_results') is None:
+        if state.get('quant_analysis') is None:
             logger.error("Quantitative analysis result not obtained")
             raise ValueError("Quantitative analysis result not obtained")
         
         # Generate final report
-        task = f"Please generate a comprehensive analysis report based on the market sentiment analysis result {state['sentiment_analysis']} and the quantitative analysis result {state['quant_analysis_results']}"
-        final_report = function_call_agent.run(task)
+        # Import and directly call the generate_report tool
+        from core.tools.final_report_generation import ReportAgent
+        
+        # Parse sentiment_analysis if it's a string (handle incorrect format)
+        sentiment_data = state['sentiment_analysis']
+        if isinstance(sentiment_data, str):
+            # Create a fallback sentiment data structure
+            sentiment_data = {
+                "overall_sentiment": "neutral",
+                "sentiment_score": 0.0,
+                "confidence": 0.8,
+                "error": "Sentiment analysis format issue",
+                "raw_data": sentiment_data
+            }
+        
+        # Create ReportAgent and generate complete report
+        report_agent = ReportAgent()
+        final_report = report_agent.generate_report(
+            quant_analysis_result=state['quant_analysis'],
+            market_sentiment_result=sentiment_data
+        )
         
         if final_report is None:
             logger.error("Generating final report failed")
@@ -209,7 +228,7 @@ def generate_final_report_node(state: WorkflowState) -> WorkflowState:
         
         # Update state
         state['final_report'] = final_report
-        logger.info("Final report generated")
+        logger.info(f"Final report generated with structure: {list(final_report.keys()) if isinstance(final_report, dict) else type(final_report)}")
         
         return state
     except Exception as e:
@@ -225,7 +244,7 @@ if __name__ == "__main__":
         messages=[],
         symbol="",      # Provided by frontend
         trading_strategy=None,
-        quant_analysis_results=None,
+        quant_analysis=None,
         sentiment_analysis=None,
         final_report=None,
         strategy_attempts=0 
