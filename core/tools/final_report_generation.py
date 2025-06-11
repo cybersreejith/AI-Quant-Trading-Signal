@@ -25,10 +25,10 @@ if not OPENAI_API_KEY:
 
 class FinalTradingReport(BaseModel):
     """Complete trading report with all data for frontend"""
-    quant_analysis: dict = Field(description="量化分析结果")
-    market_sentiment: dict = Field(description="市场情绪分析结果")
-    ai_analysis: str = Field(description="AI生成的综合分析报告文本")
-    generated_at: str = Field(description="生成时间")
+    quant_analysis: dict = Field(description="quantitative analysis result")
+    market_sentiment: dict = Field(description="market sentiment analysis result")
+    ai_analysis: str = Field(description="AI generated comprehensive analysis report text")
+    generated_at: str = Field(description="generation time")
 
 class ReportAgent:
     """Trading analysis report generation AI agent"""
@@ -69,7 +69,7 @@ class ReportAgent:
             ("user", "{analysis_data}")
         ])
         
-        # 不再需要Pydantic输出解析器，直接解析JSON
+        # no need for Pydantic output parser, directly parse JSON
     
     def generate_report(self, quant_analysis_result: Dict[str, Any], market_sentiment_result: Dict[str, Any]) -> Dict[str, Any]:
         """
@@ -134,7 +134,7 @@ class ReportAgent:
                 "error": str(e)
             }
 
-# 创建全局agent实例  
+# create global agent instance  
 _report_agent = ReportAgent()
 
 @tool("generate_report")        
