@@ -4,7 +4,7 @@ import os
 from dotenv import load_dotenv
 import requests
 from datetime import datetime, timedelta
-from langchain.chat_models import ChatOpenAI
+from langchain_openai import ChatOpenAI
 from langchain.prompts import ChatPromptTemplate
 from langchain.output_parsers import PydanticOutputParser
 from pydantic import BaseModel, Field
@@ -13,8 +13,8 @@ import yfinance as yf
 from bs4 import BeautifulSoup
 from langchain.schema import Document
 from langchain.text_splitter import RecursiveCharacterTextSplitter
-from langchain.vectorstores import FAISS
-from langchain.embeddings import OpenAIEmbeddings
+from langchain_community.vectorstores import FAISS
+from langchain_openai import OpenAIEmbeddings
 from langchain_core.tools import tool
 
 # Load environment variables
@@ -42,9 +42,7 @@ class SentimentAnalysis(BaseModel):
     """Market sentiment analysis result model"""
     overall_sentiment: str = Field(description="Overall market sentiment: positive/neutral/negative")
     sentiment_score: float = Field(description="Sentiment score, range -1 to 1")
-    key_points: List[str] = Field(description="Key points analysis")
     confidence: float = Field(description="Analysis confidence, range 0 to 1")
-    news_summary: str = Field(description="News content summary")
 
 class SentimentAgent:
     """Market sentiment analysis AI agent"""
@@ -70,27 +68,23 @@ class SentimentAgent:
         self.news_analysis_prompt = ChatPromptTemplate.from_messages([
             ("system", """
             You are a professional market sentiment analyst. Please combine the following background material and news content to extract key information and evaluate market sentiment.
-            Output includes:
+            
+            You MUST provide ALL of the following fields:
             1. Overall market sentiment (positive/neutral/negative)
             2. Sentiment score (-1 to 1)
-            3. Key points analysis (list form)
-            4. Analysis confidence (0 to 1)
-            5. News content summary (within 200 words)
-            
-            
+            3. Analysis confidence (0 to 1)
             
             Example of valid output format:
             {{
                 "overall_sentiment": "positive",
                 "sentiment_score": 0.2,
-                "key_points": ["profitable", "strong cash flow", "innovation"],
-                "confidence": 0.7,
-                "news_summary": "This is the summary of the news"
+                "confidence": 0.7
             }}
         
             DO NOT include any additional text, explanations, or markdown formatting.
             The output must be a valid JSON object that can be parsed directly.
             DO NOT add any text before or after the JSON object.
+            ENSURE ALL 3 FIELDS ARE INCLUDED.
             
             """),
             ("user", "【Background information】\n{extra_context}\n\n【News content】\n{news_content}")
@@ -115,6 +109,9 @@ class SentimentAgent:
             ticker = yf.Ticker(symbol)
             news = ticker.news
             
+            # 限制新闻数量，最多处理前5条
+            news = news[:5]
+            
             # Format news data
             formatted_articles = []
             for article in news:
@@ -123,13 +120,14 @@ class SentimentAgent:
                 date = article['content']['pubDate']
                 url = article['content']['canonicalUrl']['url']
                 
-                # Get the full text content
-                full_text = ""
+                # Get the first part of content only (limit to 300 chars)
+                limited_content = ""
                 try:
                     r = requests.get(url, timeout=5)
                     soup = BeautifulSoup(r.text, "html.parser")
                     paragraphs = soup.find_all("p")
-                    full_text = "\n".join(p.get_text() for p in paragraphs if p.get_text())
+                    full_text = "\n".join(p.get_text() for p in paragraphs[:3] if p.get_text())  # 只取前3段
+                    limited_content = full_text[:300] + "..." if len(full_text) > 300 else full_text  # 限制300字符
                 except Exception as e:
                     logger.warning(f"Failed to fetch body: {e}")   
 
@@ -139,7 +137,7 @@ class SentimentAgent:
                     "date": date,
                     "summary": article['content']['summary'],
                     "url": url,
-                    "content": full_text
+                    "content": limited_content
                 })
                 
             return formatted_articles
@@ -190,15 +188,12 @@ class SentimentAgent:
             )
             
             # Parse output
-            analysis = self.output_parser.parse(response)
+            analysis = self.output_parser.parse(response)           
             
             return {
                 "overall_sentiment": analysis.overall_sentiment,
                 "sentiment_score": analysis.sentiment_score,
-                "key_points": analysis.key_points,
-                "confidence": analysis.confidence,
-                "news_summary": analysis.news_summary,
-                "articles": articles
+                "confidence": analysis.confidence
             }
             
         except Exception as e:
@@ -206,30 +201,34 @@ class SentimentAgent:
             return {
                 "error": str(e)
             }
-    #@tool("analyze_market_sentiment")
-    def analyze_market_sentiment(self, symbol: str) -> Dict[str, Any]:
-        """
-        Analyze market sentiment based on news content of a specific asset
-        """
-        try:
-            logger.info(f"Starting to analyze market sentiment for {symbol}")
-            
-            # Get news
-            articles = self._fetch_news(symbol)
-            if not articles:
-                logger.warning(f"No news found for {symbol}")
-                return {
-                    "error": "No news found"
-                }
-                
-            # Analyze news
-            result = self._analyze_news(articles)
-            
-            logger.info(f"Market sentiment analysis for {symbol} completed")
-            return result
-            
-        except Exception as e:
-            logger.error(f"Error analyzing market sentiment: {str(e)}")
+
+# 创建全局agent实例
+_sentiment_agent = SentimentAgent()
+
+@tool("analyze_market_sentiment")
+def analyze_market_sentiment(symbol: str) -> Dict[str, Any]:
+    """
+    Analyze market sentiment based on news content of a specific asset
+    """
+    try:
+        logger.info(f"Starting to analyze market sentiment for {symbol}")
+        
+        # Get news
+        articles = _sentiment_agent._fetch_news(symbol)
+        if not articles:
+            logger.warning(f"No news found for {symbol}")
             return {
-                "error": str(e)
+                "error": "No news found"
             }
+            
+        # Analyze news
+        result = _sentiment_agent._analyze_news(articles)
+        
+        logger.info(f"Market sentiment analysis for {symbol} completed")
+        return result
+        
+    except Exception as e:
+        logger.error(f"Error analyzing market sentiment: {str(e)}")
+        return {
+            "error": str(e)
+        }

@@ -634,23 +634,29 @@ def quant_analysis(symbol: str, strategy: dict) -> dict:
         # 5. Evaluate backtest results
         evaluation = evaluate_backtest(backtest_result)
         logger.info(f"evaluation result: {evaluation}")
-        # 6. Generate backtest report
+        # 6. Generate backtest report - 简化版本，只保留核心信息
         report = {
             'status': 'success',
             'symbol': symbol,
             'strategy_name': strategy['name'],
-            'backtest_period': {
-                'start_date': historical_data.index[0].strftime('%Y-%m-%d'),
-                'end_date': historical_data.index[-1].strftime('%Y-%m-%d')
+            'live_signal': live_signal,
+            # 核心性能指标
+            'key_metrics': {
+                'total_return': f"{evaluation['performance_metrics']['total_return']:.2%}",
+                'sharpe_ratio': round(evaluation['performance_metrics']['sharpe_ratio'], 2),
+                'max_drawdown': f"{evaluation['performance_metrics']['max_drawdown']:.2%}",
+                'win_rate': f"{evaluation['trading_statistics']['win_rate']:.1%}"
             },
-            'live_signal': live_signal,  # Add real-time trading signal
-            'performance_metrics': evaluation['performance_metrics'],
-            'trading_statistics': evaluation['trading_statistics'],
-            'risk_metrics': evaluation['risk_metrics'],
-            'conclusion': evaluation['conclusion'],
-            'is_satisfactory': evaluation['is_satisfactory']  # Add strategy satisfaction flag
+            # 简化结论
+            'summary': {
+                'rating': evaluation['conclusion']['overall_rating'],
+                'recommendation': "建议使用" if evaluation['is_satisfactory'] else "不建议使用",
+                'key_strength': evaluation['conclusion']['strengths'][0] if evaluation['conclusion']['strengths'] else "暂无明显优势",
+                'main_weakness': evaluation['conclusion']['weaknesses'][0] if evaluation['conclusion']['weaknesses'] else "表现良好"
+            },
+            'is_satisfactory': evaluation['is_satisfactory']
         }
-        
+        logger.info(f"backtest report: {report}")
         return report
         
     except Exception as e:

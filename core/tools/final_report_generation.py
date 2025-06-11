@@ -2,9 +2,9 @@ from typing import Dict, Any, List, Optional
 import logging
 import os
 from dotenv import load_dotenv
-from langchain.chat_models import ChatOpenAI
+from langchain_openai import ChatOpenAI
 from langchain.prompts import ChatPromptTemplate
-from langchain.output_parsers import PydanticOutputParser
+
 from pydantic import BaseModel, Field
 from datetime import datetime
 from langchain_core.tools import tool
@@ -23,15 +23,12 @@ if not OPENAI_API_KEY:
     logger.error("OPENAI_API_KEY not found, please make sure your .env file is configured correctly")
     raise ValueError("OPENAI_API_KEY not found, please make sure your .env file is configured correctly")
 
-class TradingReport(BaseModel):
-    """Trading report model"""
-    summary: str = Field(description="Overall analysis summary")
-    market_sentiment: Dict[str, Any] = Field(description="Market sentiment analysis")
-    quant_analysis: Dict[str, Any] = Field(description="Quantitative analysis results")
-    recommendations: List[str] = Field(description="Trading recommendations")
-    risk_assessment: Dict[str, Any] = Field(description="Risk assessment")
-    confidence_score: float = Field(description="Analysis confidence")
-    generated_at: str = Field(description="Report generation time")
+class FinalTradingReport(BaseModel):
+    """Complete trading report with all data for frontend"""
+    quant_analysis: dict = Field(description="量化分析结果")
+    market_sentiment: dict = Field(description="市场情绪分析结果")
+    ai_analysis: str = Field(description="AI生成的综合分析报告文本")
+    generated_at: str = Field(description="生成时间")
 
 class ReportAgent:
     """Trading analysis report generation AI agent"""
@@ -54,52 +51,29 @@ class ReportAgent:
         """Set up the prompt template"""
         # Report generation prompt template
         self.report_prompt = ChatPromptTemplate.from_messages([
-            ("system", """You are a professional quantitative trading analyst. Please generate a comprehensive analysis report based on the provided original quantitative analysis and market sentiment data.
+            ("system", """You are a professional quantitative trading analyst. Please generate a comprehensive analysis report based on the provided quantitative analysis and market sentiment data.
 
-            The input data will include two main parts:
-            1. quant_analysis: Contains strategy performance metrics, trading statistics, risk assessment, etc.
-            2. market_sentiment: Contains market sentiment analysis and news summary.
-
-            Please analyze these original data carefully and generate a JSON format report containing the following fields:
-            {
-                "summary": "Overall analysis summary, including comprehensive evaluation of strategy performance and market environment",
-                "market_sentiment": {
-                    "overall_sentiment": "Evaluation of market sentiment based on original data",
-                    "key_factors": ["List of key factors affecting market sentiment"],
-                    "news_impact": "Analysis of the impact of important news events on the market"
-                },
-                "quant_analysis": {
-                    "strategy_performance": "Evaluation of the overall performance of the strategy",
-                    "key_metrics": "Analysis and interpretation of key metrics",
-                    "risk_return": "Analysis of risk and return characteristics"
-                },
-                "recommendations": [
-                    "Specific trading recommendations based on the analysis results"
-                ],
-                "risk_assessment": {
-                    "market_risk": "Current market risk analysis",
-                    "strategy_risk": "Strategy risk analysis",
-                    "risk_mitigation": "Risk mitigation suggestions"
-                },
-                "confidence_score": 0.95  // Overall analysis confidence
-            }
+            Please analyze the input data and generate a JSON format with a single field containing a complete report:
+            {{
+                "summary": "Here is the complete analysis report text, including:\n1. Strategy performance summary\n2. Market sentiment analysis\n3. Recommendations\n4. Risk assessment\n5. Conclusion and recommendations"
+            }}
             
             Requirements:
-            1. Strictly follow the above JSON format
-            2. Based on the original data for in-depth analysis, do not simply repeat the data
-            3. Provide valuable insights and recommendations
-            4. Ensure all numerical analyses are accurate
-            5. Risk assessment must be comprehensive and practical"""),
+            1. Output ONLY valid JSON format with single "summary" field
+            2. The report should be a complete, well-structured analysis (300-500 words)
+            3. Include strategy performance, market sentiment, recommendations, and risk assessment
+            4. Use clear section headers and bullet points for readability
+            5. Provide specific actionable advice
+            6. Use English for all content
+            7. DO NOT include any text outside the JSON structure"""),
             ("user", "{analysis_data}")
         ])
         
-        # Output parser
-        self.output_parser = PydanticOutputParser(pydantic_object=TradingReport)
-        
-    @tool("generate_report")        
+        # 不再需要Pydantic输出解析器，直接解析JSON
+    
     def generate_report(self, quant_analysis_result: Dict[str, Any], market_sentiment_result: Dict[str, Any]) -> Dict[str, Any]:
         """
-        Generate a comprehensive analysis report based on the provided original quantitative analysis and market sentiment analysis
+        Generate a comprehensive analysis report based on the provided quantitative analysis and market sentiment analysis
         """
         try:
             logger.info("Starting to generate trading analysis report")
@@ -115,22 +89,57 @@ class ReportAgent:
                 self.report_prompt.format(analysis_data=json.dumps(combined_data, ensure_ascii=False, indent=2))
             )
             
-            # Parse output
-            report = self.output_parser.parse(response.content)
+            # Parse LLM output JSON directly
+            logger.info(f"LLM raw response: {response.content}")
+            try:
+                llm_output = json.loads(response.content)
+                summary_text = llm_output.get("summary", "Failed to generate report")
+                logger.info(f"Successfully parsed LLM JSON output")
+            except json.JSONDecodeError as e:
+                logger.error(f"JSON parsing failed: {str(e)}")
+                logger.error(f"Raw content: {response.content}")
+                
+                # Try to extract content between JSON markers if LLM wrapped it
+                content = response.content.strip()
+                if "```json" in content and "```" in content:
+                    # Extract JSON from markdown code block
+                    start = content.find("```json") + 7
+                    end = content.rfind("```")
+                    json_content = content[start:end].strip()
+                    try:
+                        llm_output = json.loads(json_content)
+                        summary_text = llm_output.get("summary", "Failed to generate report")
+                        logger.info(f"Successfully extracted JSON from markdown")
+                    except:
+                        summary_text = f"Error: Could not parse LLM response. Raw content: {content[:200]}..."
+                else:
+                    # If no valid JSON found, use the raw content as summary
+                    summary_text = f"LLM Response (non-JSON): {content}"
             
-            # Only return the report content generated by LLM, add timestamp
-            report_dict = report.model_dump()
-            report_dict.update({
-                "quant_analysis": quant_analysis_result,
-                "market_sentiment": market_sentiment_result,
-                "generated_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-            })
+            # Create complete report with all data for frontend
+            complete_report = FinalTradingReport(
+                quant_analysis=quant_analysis_result,
+                market_sentiment=market_sentiment_result,
+                ai_analysis=summary_text,
+                generated_at=datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            )
             
-            logger.info("Trading analysis report generated")
+            report_dict = complete_report.model_dump()
+            logger.info(f"Complete trading analysis report generated: {report_dict}")
             return report_dict
             
         except Exception as e:
             logger.error(f"Error generating trading analysis report: {str(e)}")
             return {
                 "error": str(e)
-            } 
+            }
+
+# 创建全局agent实例  
+_report_agent = ReportAgent()
+
+@tool("generate_report")        
+def generate_report(quant_analysis_result: Dict[str, Any], market_sentiment_result: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Generate a comprehensive analysis report based on the provided quantitative analysis and market sentiment analysis
+    """
+    return _report_agent.generate_report(quant_analysis_result, market_sentiment_result) 
