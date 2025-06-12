@@ -395,34 +395,55 @@ const Report: React.FC = () => {
         {/* Trading Report Header */}
         <div
           style={{
-            marginBottom: 24,
+            marginBottom: 32,
             boxShadow: "0 4px 24px #e3eafc",
             background: "#fff",
             borderRadius: 16,
-            padding: 24,
+            padding: "32px 32px 24px 32px",
+            display: "flex",
+            alignItems: "center",
+            minHeight: 100,
+            position: "relative",
           }}
         >
-          <div
-            style={{ display: "flex", alignItems: "center", marginBottom: 16 }}
-          >
+          <div style={{ flex: 1 }}>
             <h3
               style={{
                 margin: 0,
                 color: "#1976d2",
-                fontSize: 20,
-                fontWeight: 700,
+                fontWeight: 500,
+                fontSize: 24,
+                lineHeight: 1.2,
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
               }}
             >
-              Trading Report - {symbol}
+              <span>Stock Symbol</span>
+              <span
+                style={{ color: "grey", fontWeight: 400, fontStyle: "italic" }}
+              >
+                {symbol}
+              </span>
             </h3>
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                marginTop: 18,
+                fontSize: 15,
+                color: "#555",
+                fontWeight: 500,
+              }}
+            >
+              <span>
+                <i>Analysis Time:</i> {new Date(timestamp).toLocaleString()}
+              </span>
+              <span>
+                <i>Generated Time:</i> {finalReport.generated_at}
+              </span>
+            </div>
           </div>
-          <p style={{ margin: "8px 0", color: "#555" }}>
-            <strong>Analysis Time:</strong>{" "}
-            {new Date(timestamp).toLocaleString()}
-          </p>
-          <p style={{ margin: "8px 0", color: "#555" }}>
-            <strong>Generated:</strong> {finalReport.generated_at}
-          </p>
         </div>
 
         {/* Market Sentiment & Trading Signal Analysis */}
@@ -432,17 +453,33 @@ const Report: React.FC = () => {
             boxShadow: "0 4px 24px #e3eafc",
             background: "#fff",
             borderRadius: 16,
-            padding: 24,
+            padding: "6px 28px",
           }}
         >
-          <h4 style={{ margin: "0 0 16px 0", color: "#1976d2" }}>
-            Market Sentiment & Trading Signal Analysis
-          </h4>
+          {/* <h4
+            style={{
+              color: "#1976d2",
+              fontWeight: 600,
+              fontSize: 26,
+              lineHeight: 1.2,
+            }}
+          >
+            Sentiment / Trading Signal Analysis
+          </h4> */}
+
           <ReactECharts
             option={{
               title: {
                 text: `${symbol} Sentiment vs Signal Analysis`,
                 left: "center",
+                top: 30,
+                padding: [16, 0, 16, 0],
+                textStyle: {
+                  color: "#1976d2",
+                  fontWeight: 500,
+                  fontSize: 24,
+                  lineHeight: 1.2,
+                },
               },
               tooltip: {
                 trigger: "item",
@@ -585,7 +622,15 @@ const Report: React.FC = () => {
             padding: 24,
           }}
         >
-          <h4 style={{ margin: "0 0 16px 0", color: "#1976d2" }}>
+          <h4
+            style={{
+              margin: "0 0 24px 32px",
+              color: "#1976d2",
+              fontWeight: 700,
+              fontSize: 22,
+              letterSpacing: 1,
+            }}
+          >
             Strategy Overview
           </h4>
           <p style={{ margin: "8px 0", color: "#555" }}>
@@ -648,7 +693,14 @@ const Report: React.FC = () => {
 
         <Card
           title="Quantitative Analysis"
-          style={{ marginBottom: 24, boxShadow: "0 4px 24px #e3eafc" }}
+          style={{
+            boxShadow: "0 4px 24px #e3eafc",
+            margin: "0 0 24px 32px",
+            color: "#1976d2",
+            fontWeight: 700,
+            fontSize: 22,
+            letterSpacing: 1,
+          }}
         >
           <Table
             columns={[
@@ -702,7 +754,6 @@ const Report: React.FC = () => {
                 : []),
             ]}
           />
-
           <div style={{ marginTop: 16 }}>
             <Paragraph>
               <strong>Key Strength:</strong>{" "}
@@ -814,13 +865,12 @@ const Report: React.FC = () => {
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          minHeight: 70,
+          minHeight: 120,
         }}
       >
         <button
           onClick={() => navigate("/")}
           style={{
-            marginRight: 16,
             background: "none",
             border: "none",
             color: "#1976d2",
@@ -830,7 +880,8 @@ const Report: React.FC = () => {
             alignItems: "center",
           }}
         >
-          &#8592; Back
+          <span style={{ fontSize: 20, marginLeft: 6 }}>&#8592;&nbsp;</span>
+          <strong>Back</strong>
         </button>
         <h2
           style={{
@@ -839,9 +890,12 @@ const Report: React.FC = () => {
             fontWeight: 800,
             textAlign: "center",
             width: "100%",
+            fontSize: 26,
+            letterSpacing: 1,
+            lineHeight: 1.2,
           }}
         >
-          JPMorgan's Expert AI Analysis Outcome
+          JPMorgan's AI Powered - Trading Report
         </h2>
       </div>
 
