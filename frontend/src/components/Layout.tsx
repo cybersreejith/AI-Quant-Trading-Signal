@@ -27,19 +27,23 @@ const Layout: React.FC = () => {
           display: "flex",
           alignItems: "center",
         }}
-      >
-        <div
+      >        <div
           style={{
-            color: "#fff",
-            fontSize: 22,
-            fontWeight: 700,
-            letterSpacing: 1,
             marginRight: 32,
-            fontFamily: "Segoe UI, Arial, sans-serif",
             flex: "none",
+            display: "flex",
+            alignItems: "center",
           }}
         >
-          CHASE
+          <img
+            src="/chase-bank-logo-03.png"
+            alt="Chase"
+            style={{
+              height: 150,
+              width: "auto",
+              objectFit: "contain",
+            }}
+          />
         </div>
         <Menu
           theme="dark"
@@ -53,8 +57,29 @@ const Layout: React.FC = () => {
             fontSize: 16,
             flex: 1,
             minWidth: 0,
-          }}
-        />
+          }}        />        {/* Investments by text and JP Morgan Logo - Top Right of Navigation */}
+        <div style={{ display: "flex", alignItems: "center", marginLeft: "20px" }}>
+          <span
+            style={{
+              color: "#fff",
+              fontSize: "14px",
+              fontWeight: 500,
+              marginRight: "10px",
+              opacity: 0.9,
+              fontFamily: "Amplitude, sans-serif",
+            }}
+          >
+            Investments by
+          </span>          <img
+            src="/jp-morgan-mozaic-ii-index.png"
+            alt="JP Morgan Logo"
+            style={{
+              height: "100px",
+              width: "auto",
+              opacity: 0.9,
+            }}
+          />
+        </div>
       </Header>
       <Content
         style={{

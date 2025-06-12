@@ -62,7 +62,7 @@ backtest_data/
 reports/
 output/
 *.pdf
-*.png
+# *.png
 *.jpg
 *.jpeg
 trading_report_*.txt
