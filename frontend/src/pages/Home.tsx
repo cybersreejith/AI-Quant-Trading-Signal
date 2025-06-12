@@ -73,7 +73,7 @@ const Home: React.FC = () => {
               background: "#fff",
               border: "none",
               borderRadius: 18,
-              height: 420,
+              height: 130,
               overflow: "hidden",
               position: "relative",
               boxShadow: "0 4px 24px rgba(0,0,0,0.10)",
