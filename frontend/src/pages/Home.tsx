@@ -52,7 +52,7 @@ const Home: React.FC = () => {
                 marginBottom: 0,
               }}
             >
-              J.P.Morgan & Chase Quantitative Trading Platform
+              ChaseQuant AI Trader
             </Title>
             <Paragraph
               style={{
@@ -63,7 +63,7 @@ const Home: React.FC = () => {
                 opacity: 0.9,
               }}
             >
-              Empowering Institutional Trading with AI-driven Insights
+              Empowering JPMorgan Institutional Trading with AI-driven Insights
             </Paragraph>
           </Card>
         </Col>
@@ -198,7 +198,7 @@ const Home: React.FC = () => {
                 letterSpacing: 1,
               }}
             >
-              AI Quant Trading Analysis
+              AI Powered Quant Trading Analysis
             </div>
           </Card>
         </Col>
