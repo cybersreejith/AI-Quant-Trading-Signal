@@ -253,10 +253,10 @@ const Trading: React.FC = () => {
                 fontFamily: "Segoe UI, Arial, sans-serif",
                 textAlign: "center",
                 display: "inline-block",
-                color: JPM_BLUE,
+                color: "#1976d2",
               }}
             >
-              JPMorgan's AI-Powered Trading Signal
+              J.P.Morgan Financial Advisor Analysis
             </span>
           </div>
         }

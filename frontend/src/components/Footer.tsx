@@ -20,7 +20,6 @@ const footerLinks = [
 const JPMFooter: React.FC = () => (
   <footer
     style={{
-      marginTop: 48,
       background: "#002244",
       color: "#fff",
       borderRadius: 0,

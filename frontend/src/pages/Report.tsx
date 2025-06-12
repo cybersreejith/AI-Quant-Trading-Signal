@@ -1,272 +1,8 @@
 import React, { useState, useEffect } from "react";
 import ReactECharts from "echarts-for-react";
 import { useNavigate, useLocation } from "react-router-dom";
-
-/********************* MOCK Data Setup *******************************************/
-// Add this mock data at the top of your file
-/*const mockReportHistory: ReportRecord[] = [
-  {
-    id: "1",
-    symbol: "AAPL",
-    timestamp: new Date().toISOString(),
-    analysisData: {
-      final_report: {
-        quant_analysis: {
-          status: "success",
-          symbol: "AAPL",
-          strategy_name: "Momentum Strategy",
-          live_signal: "BUY",
-          key_metrics: {
-            total_return: "15%",
-            sharpe_ratio: 1.23,
-            max_drawdown: "5%",
-            win_rate: "60%",
-            total_trades: 20,
-            avg_trade_duration: "3d",
-          },
-          summary: {
-            rating: "Good",
-            recommendation: "Consider buying on dips.",
-            key_strength: "Strong upward momentum.",
-            main_weakness: "Sensitive to market corrections.",
-          },
-          is_satisfactory: true,
-        },
-        market_sentiment: {
-          overall_sentiment: "positive",
-          sentiment_score: 0.75,
-          confidence: 0.92,
-        },
-        ai_analysis: "The asset shows strong momentum and positive sentiment.",
-        generated_at: new Date().toLocaleString(),
-      },
-    },
-  },
-  {
-    id: "2",
-    symbol: "TEST1",
-    timestamp: new Date().toISOString(),
-    analysisData: {
-      final_report: {
-        quant_analysis: {
-          status: "success",
-          symbol: "AAPL",
-          strategy_name: "Momentum Strategy",
-          live_signal: "BUY",
-          key_metrics: {
-            total_return: "15%",
-            sharpe_ratio: 1.23,
-            max_drawdown: "5%",
-            win_rate: "60%",
-            total_trades: 20,
-            avg_trade_duration: "3d",
-          },
-          summary: {
-            rating: "Good",
-            recommendation: "Consider buying on dips.",
-            key_strength: "Strong upward momentum.",
-            main_weakness: "Sensitive to market corrections.",
-          },
-          is_satisfactory: true,
-        },
-        market_sentiment: {
-          overall_sentiment: "positive",
-          sentiment_score: 0.75,
-          confidence: 0.92,
-        },
-        ai_analysis: "The asset shows strong momentum and positive sentiment.",
-        generated_at: new Date().toLocaleString(),
-      },
-    },
-  },
-  {
-    id: "3",
-    symbol: "TEST3",
-    timestamp: new Date().toISOString(),
-    analysisData: {
-      final_report: {
-        quant_analysis: {
-          status: "success",
-          symbol: "AAPL",
-          strategy_name: "Momentum Strategy",
-          live_signal: "BUY",
-          key_metrics: {
-            total_return: "15%",
-            sharpe_ratio: 1.23,
-            max_drawdown: "5%",
-            win_rate: "60%",
-            total_trades: 20,
-            avg_trade_duration: "3d",
-          },
-          summary: {
-            rating: "Good",
-            recommendation: "Consider buying on dips.",
-            key_strength: "Strong upward momentum.",
-            main_weakness: "Sensitive to market corrections.",
-          },
-          is_satisfactory: true,
-        },
-        market_sentiment: {
-          overall_sentiment: "positive",
-          sentiment_score: 0.75,
-          confidence: 0.92,
-        },
-        ai_analysis: "The asset shows strong momentum and positive sentiment.",
-        generated_at: new Date().toLocaleString(),
-      },
-    },
-  },
-  {
-    id: "4",
-    symbol: "TEST4",
-    timestamp: new Date().toISOString(),
-    analysisData: {
-      final_report: {
-        quant_analysis: {
-          status: "success",
-          symbol: "AAPL",
-          strategy_name: "Momentum Strategy",
-          live_signal: "BUY",
-          key_metrics: {
-            total_return: "15%",
-            sharpe_ratio: 1.23,
-            max_drawdown: "5%",
-            win_rate: "60%",
-            total_trades: 20,
-            avg_trade_duration: "3d",
-          },
-          summary: {
-            rating: "Good",
-            recommendation: "Consider buying on dips.",
-            key_strength: "Strong upward momentum.",
-            main_weakness: "Sensitive to market corrections.",
-          },
-          is_satisfactory: true,
-        },
-        market_sentiment: {
-          overall_sentiment: "positive",
-          sentiment_score: 0.75,
-          confidence: 0.92,
-        },
-        ai_analysis: "The asset shows strong momentum and positive sentiment.",
-        generated_at: new Date().toLocaleString(),
-      },
-    },
-  },
-  {
-    id: "5",
-    symbol: "TEST5",
-    timestamp: new Date().toISOString(),
-    analysisData: {
-      final_report: {
-        quant_analysis: {
-          status: "success",
-          symbol: "AAPL",
-          strategy_name: "Momentum Strategy",
-          live_signal: "BUY",
-          key_metrics: {
-            total_return: "15%",
-            sharpe_ratio: 1.23,
-            max_drawdown: "5%",
-            win_rate: "60%",
-            total_trades: 20,
-            avg_trade_duration: "3d",
-          },
-          summary: {
-            rating: "Good",
-            recommendation: "Consider buying on dips.",
-            key_strength: "Strong upward momentum.",
-            main_weakness: "Sensitive to market corrections.",
-          },
-          is_satisfactory: true,
-        },
-        market_sentiment: {
-          overall_sentiment: "positive",
-          sentiment_score: 0.75,
-          confidence: 0.92,
-        },
-        ai_analysis: "The asset shows strong momentum and positive sentiment.",
-        generated_at: new Date().toLocaleString(),
-      },
-    },
-  },
-  {
-    id: "6",
-    symbol: "TEST7",
-    timestamp: new Date().toISOString(),
-    analysisData: {
-      final_report: {
-        quant_analysis: {
-          status: "success",
-          symbol: "AAPL",
-          strategy_name: "Momentum Strategy",
-          live_signal: "BUY",
-          key_metrics: {
-            total_return: "15%",
-            sharpe_ratio: 1.23,
-            max_drawdown: "5%",
-            win_rate: "60%",
-            total_trades: 20,
-            avg_trade_duration: "3d",
-          },
-          summary: {
-            rating: "Good",
-            recommendation: "Consider buying on dips.",
-            key_strength: "Strong upward momentum.",
-            main_weakness: "Sensitive to market corrections.",
-          },
-          is_satisfactory: true,
-        },
-        market_sentiment: {
-          overall_sentiment: "positive",
-          sentiment_score: 0.75,
-          confidence: 0.92,
-        },
-        ai_analysis: "The asset shows strong momentum and positive sentiment.",
-        generated_at: new Date().toLocaleString(),
-      },
-    },
-  },
-];*/
-
-/********************* MOCK Data Setup *******************************************/
-
-interface FinalReport {
-  quant_analysis: {
-    status: string;
-    symbol: string;
-    strategy_name: string;
-    live_signal: string;
-    key_metrics: {
-      total_return: string;
-      sharpe_ratio: number;
-      max_drawdown: string;
-      win_rate: string;
-      total_trades?: number;
-      avg_trade_duration?: string;
-    };
-    summary: {
-      rating: string;
-      recommendation: string;
-      key_strength: string;
-      main_weakness: string;
-    };
-    is_satisfactory: boolean;
-  };
-  market_sentiment: {
-    overall_sentiment: string;
-    sentiment_score: number;
-    confidence: number;
-    error?: string;
-    raw_data?: string;
-  };
-  ai_analysis: string;
-  generated_at: string;
-}
-
-interface AnalysisData {
-  final_report: FinalReport;
-}
+import mockReportHistory from "../mockdata/mockReportHistory";
+import { ReportRecord, AnalysisData, FinalReport } from "../types/reportTypes";
 
 const sentimentColor = (sentiment: string) => {
   if (sentiment === "positive") return "#52c41a";
@@ -274,26 +10,18 @@ const sentimentColor = (sentiment: string) => {
   return "#faad14";
 };
 
-interface ReportRecord {
-  id: string;
-  symbol: string;
-  timestamp: string;
-  analysisData: AnalysisData;
-}
-
 const Report: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const [isBackHovered, setIsBackHovered] = useState(false);
 
   /****************** Mock Data Setup *************************** */
 
-  // Use mock data for testing
   /*const [reportHistory, setReportHistory] =
     useState<ReportRecord[]>(mockReportHistory);
   const [selectedReport, setSelectedReport] = useState<ReportRecord | null>(
     mockReportHistory[0]
   );*/
-  /****************** Mock Data Setup *************************** */
 
   const [reportHistory, setReportHistory] = useState<ReportRecord[]>([]);
   const [selectedReport, setSelectedReport] = useState<ReportRecord | null>(
@@ -310,7 +38,8 @@ const Report: React.FC = () => {
     );
   }, []);
 
-  // if there is new analysis data, add it to the history record
+  /****************** Mock Data Setup *************************** */
+
   useEffect(() => {
     if (location.state) {
       const { analysisData, symbol, timestamp } = location.state as {
@@ -333,75 +62,115 @@ const Report: React.FC = () => {
     }
   }, [location.state]);
 
-  // if there is no history record
   if (reportHistory.length === 0) {
     return (
       <div
         style={{
-          padding: "32px 0",
           background: "#f8fbff",
-          borderRadius: 12,
+          borderRadius: 20,
+          minHeight: "75vh",
+          maxWidth: "85vw",
+          margin: "0 auto",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          boxShadow: "0 8px 32px #e3eafc",
         }}
       >
         <div
           style={{
+            background: "#fff",
+            borderRadius: 20,
+            boxShadow: "0 8px 32px #e3eafc",
+            padding: "48px 56px",
+            minWidth: "75vw",
+            margin: "0 auto",
             display: "flex",
+            flexDirection: "column",
             alignItems: "center",
-            width: "100%",
-            marginBottom: 28,
+            position: "relative",
           }}
         >
-          <button
-            onClick={() => navigate("/")}
+          <div
             style={{
-              marginRight: 18,
-              background: "none",
-              border: "none",
-              color: "#1976d2",
-              fontSize: 20,
-              cursor: "pointer",
               display: "flex",
               alignItems: "center",
-              fontWeight: 700,
+              width: "100%",
+              marginBottom: 32,
             }}
           >
-            <span style={{ fontSize: 22, marginRight: 6 }}>&#8592;</span>
-            <span>Back</span>
-          </button>
-          <h2
+            <button
+              onClick={() => navigate("/")}
+              onMouseEnter={() => setIsBackHovered(true)}
+              onMouseLeave={() => setIsBackHovered(false)}
+              style={{
+                marginRight: 18,
+                background: "none",
+                border: "none",
+                color: isBackHovered ? "#1976d2" : "#4b5e7a",
+                fontSize: 20,
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                fontWeight: 500,
+                borderRadius: 8,
+                padding: "6px 16px",
+                transition: "all 0.2s",
+              }}
+            >
+              <span
+                style={{
+                  fontSize: 22,
+                  marginRight: 6,
+                  color: isBackHovered ? "#1976d2" : "#4b5e7a",
+                  transition: "color 0.2s",
+                }}
+              >
+                &#8592;
+              </span>
+              <span>Back</span>
+            </button>
+            <h2
+              style={{
+                margin: 0,
+                fontWeight: 800,
+                color: "#1976d2",
+                fontSize: 26,
+                letterSpacing: 1,
+                flex: 1,
+                textAlign: "center",
+              }}
+            >
+              J.P.Morgan Financial Advisor AI Powered Report
+            </h2>
+          </div>
+          {/* Optional: Add an icon or illustration */}
+          <div style={{ fontSize: 48, marginBottom: 24, color: "#e3eafc" }}>
+            📄
+          </div>
+          <div
             style={{
-              margin: 0,
-              fontWeight: 800,
-              color: "#1976d2",
-              fontSize: 26,
-              letterSpacing: 1,
-              flex: 1,
+              background: "#f8fbff",
+              borderRadius: 14,
+              padding: "36px 24px",
+              width: "100%",
               textAlign: "center",
+              color: "#555",
+              fontSize: 18,
+              fontWeight: 500,
+              boxShadow: "0 1px 4px #e3eafc",
+              border: "1px solid #e3eafc",
+              marginBottom: 8,
             }}
           >
-            JPMorgan's AI Powered - Trading Report
-          </h2>
-        </div>
-        <div
-          style={{
-            background: "#f8fbff",
-            borderRadius: 12,
-            padding: "28px 24px",
-            width: "100%",
-            textAlign: "center",
-            color: "#555",
-            fontSize: 17,
-            fontWeight: 500,
-            boxShadow: "0 1px 4px #e3eafc",
-            border: "1px solid #e3eafc",
-            maxWidth: "85vw",
-            margin: "0 auto",
-          }}
-        >
-          <span style={{ fontWeight: 600 }}>
-            No analysis history available. Please go back to the Trading page to
-            generate a new analysis.
-          </span>
+            <span style={{ color: "#1976d2", fontWeight: 600 }}>
+              No analysis history available.
+            </span>
+            <br /> <br /> <br />
+            <span style={{ color: "#888", fontWeight: 500 }}>
+              Please go back to the Trading page to generate a new analysis.
+            </span>
+          </div>
         </div>
       </div>
     );
@@ -1216,17 +985,33 @@ const Report: React.FC = () => {
       >
         <button
           onClick={() => navigate("/")}
+          onMouseEnter={() => setIsBackHovered(true)}
+          onMouseLeave={() => setIsBackHovered(false)}
           style={{
+            marginRight: 18,
             background: "none",
             border: "none",
-            color: "#1976d2",
+            color: isBackHovered ? "#1976d2" : "#4b5e7a",
             fontSize: 18,
             cursor: "pointer",
             display: "flex",
             alignItems: "center",
+            fontWeight: 500,
+            borderRadius: 8,
+            padding: "6px 16px",
+            transition: "all 0.2s",
           }}
         >
-          <span style={{ fontSize: 20, marginLeft: 6 }}>&#8592;&nbsp;</span>
+          <span
+            style={{
+              fontSize: 22,
+              marginRight: 6,
+              color: isBackHovered ? "#1976d2" : "#4b5e7a",
+              transition: "color 0.2s",
+            }}
+          >
+            &#8592;&nbsp;
+          </span>
           <strong>Back</strong>
         </button>
         <h2
