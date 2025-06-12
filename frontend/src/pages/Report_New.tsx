@@ -1,14 +1,10 @@
 import React, { useState, useEffect } from "react";
-import { Card, Typography, Table, Tag } from "antd";
 import ReactECharts from "echarts-for-react";
 import { useNavigate, useLocation } from "react-router-dom";
 
-const { Paragraph } = Typography;
-
 /********************* MOCK Data Setup *******************************************/
-
 // Add this mock data at the top of your file
-const mockReportHistory: ReportRecord[] = [
+/*const mockReportHistory: ReportRecord[] = [
   {
     id: "1",
     symbol: "AAPL",
@@ -231,11 +227,10 @@ const mockReportHistory: ReportRecord[] = [
       },
     },
   },
-];
+];*/
 
 /********************* MOCK Data Setup *******************************************/
 
-// new data structure, match the backend return format
 interface FinalReport {
   quant_analysis: {
     status: string;
@@ -290,23 +285,22 @@ const Report: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  /****************** mock setup *************************** */
-  /*const [reportHistory, setReportHistory] = useState<ReportRecord[]>([]);
-  const [selectedReport, setSelectedReport] = useState<ReportRecord | null>(
-    null
-  );*/
+  /****************** Mock Data Setup *************************** */
 
   // Use mock data for testing
-  const [reportHistory, setReportHistory] =
+  /*const [reportHistory, setReportHistory] =
     useState<ReportRecord[]>(mockReportHistory);
   const [selectedReport, setSelectedReport] = useState<ReportRecord | null>(
     mockReportHistory[0]
+  );*/
+  /****************** Mock Data Setup *************************** */
+
+  const [reportHistory, setReportHistory] = useState<ReportRecord[]>([]);
+  const [selectedReport, setSelectedReport] = useState<ReportRecord | null>(
+    null
   );
-
-  /*****************mock setup **************************** */
-
   // load history report
-  /*useEffect(() => {
+  useEffect(() => {
     const history = JSON.parse(localStorage.getItem("reportHistory") || "[]");
     setReportHistory(
       history.sort(
@@ -315,7 +309,6 @@ const Report: React.FC = () => {
       )
     );
   }, []);
-  */
 
   // if there is new analysis data, add it to the history record
   useEffect(() => {
@@ -343,45 +336,89 @@ const Report: React.FC = () => {
   // if there is no history record
   if (reportHistory.length === 0) {
     return (
-      <div style={{ padding: "20px" }}>
-        <div
+      <div
+        style={{
+          padding: "32px 0",
+          background: "#f8fbff",
+          borderRadius: 12,
+        }}
+      >
+        {/* <div
           style={{
             background: "#fff",
             borderRadius: 16,
             boxShadow: "0 4px 24px #e3eafc",
-            padding: 32,
-            maxWidth: 600,
-            margin: "40px auto",
+            padding: "40px 48px",
+            maxWidth: "85vw",
+            minWidth: 420,
+            margin: "60px auto",
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+          }}
+        > */}
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            width: "100%",
+            marginBottom: 28,
           }}
         >
-          <div
-            style={{ display: "flex", alignItems: "center", marginBottom: 16 }}
+          <button
+            onClick={() => navigate("/")}
+            style={{
+              marginRight: 18,
+              background: "none",
+              border: "none",
+              color: "#1976d2",
+              fontSize: 20,
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              fontWeight: 700,
+            }}
           >
-            <button
-              onClick={() => navigate("/")}
-              style={{
-                marginRight: 16,
-                background: "none",
-                border: "none",
-                color: "#1976d2",
-                fontSize: 18,
-                cursor: "pointer",
-                display: "flex",
-                alignItems: "center",
-              }}
-            >
-              &#8592; Back
-            </button>
-            <h2 style={{ margin: 0, fontWeight: 700, color: "#1976d2" }}>
-              Trading Report
-            </h2>
-          </div>
-          <p style={{ fontSize: 16, color: "#555", margin: 0 }}>
+            <span style={{ fontSize: 22, marginRight: 6 }}>&#8592;</span>
+            <span>Back</span>
+          </button>
+          <h2
+            style={{
+              margin: 0,
+              fontWeight: 800,
+              color: "#1976d2",
+              fontSize: 26,
+              letterSpacing: 1,
+              flex: 1,
+              textAlign: "center",
+            }}
+          >
+            JPMorgan's AI Powered - Trading Report
+          </h2>
+        </div>
+        <div
+          style={{
+            background: "#f8fbff",
+            borderRadius: 12,
+            padding: "28px 24px",
+            width: "100%",
+            textAlign: "center",
+            color: "#555",
+            fontSize: 17,
+            fontWeight: 500,
+            boxShadow: "0 1px 4px #e3eafc",
+            border: "1px solid #e3eafc",
+            maxWidth: "85vw",
+            margin: "0 auto",
+          }}
+        >
+          <span style={{ fontWeight: 600 }}>
             No analysis history available. Please go back to the Trading page to
             generate a new analysis.
-          </p>
+          </span>
         </div>
       </div>
+      // </div>
     );
   }
 
