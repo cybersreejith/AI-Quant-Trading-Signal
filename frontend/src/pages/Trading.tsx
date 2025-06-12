@@ -256,7 +256,7 @@ const Trading: React.FC = () => {
                 color: JPM_BLUE,
               }}
             >
-              JPMorgans AI-Powered Trading Signal
+              JPMorgan's AI-Powered Trading Signal
             </span>
           </div>
         }
@@ -292,9 +292,10 @@ const Trading: React.FC = () => {
               ))}
             </Space>
           </Radio.Group>
-          <Text strong style={{ color: JPM_BLUE }}>
+
+          <Title level={4} style={{ color: JPM_BLUE, marginBottom: 8 }}>
             Asset Code
-          </Text>
+          </Title>
           <Input
             style={{ width: "100%", marginBottom: 16, marginTop: 8 }}
             placeholder="For example: BTC-USD, AAPL, EURUSD=X"
