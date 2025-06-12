@@ -5,7 +5,7 @@ import { Routes, Route } from "react-router-dom";
 import Layout from "./components/Layout";
 import Home from "./pages/Home";
 import Trading from "./pages/Trading";
-import Report from "./pages/Report_New";
+import Report from "./pages/Report";
 import JPMFooter from "./components/Footer";
 
 const App: React.FC = () => {
