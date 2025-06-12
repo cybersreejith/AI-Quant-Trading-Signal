@@ -28,7 +28,8 @@ const Home: React.FC = () => {
         background: JPM_GRADIENT,
         position: "relative",
         zIndex: 1,
-      }}    >
+      }}
+    >
       <Row gutter={[32, 32]}>
         <Col span={24}>
           <Card
@@ -73,7 +74,7 @@ const Home: React.FC = () => {
               background: "#fff",
               border: "none",
               borderRadius: 18,
-              height: 130,
+              height: 420,
               overflow: "hidden",
               position: "relative",
               boxShadow: "0 4px 24px rgba(0,0,0,0.10)",
@@ -420,7 +421,7 @@ const Home: React.FC = () => {
           </Card>
         </Col>
       </Row>
-      {/* Custom CSS animations   */}
+      {/* Custom CSS animations   
       <style>
         {`
           @keyframes gridMove {
@@ -456,7 +457,7 @@ const Home: React.FC = () => {
             box-shadow: 0 8px 24px ${GOLD}33;
           }
         `}
-      </style>
+      </style>*/}
     </div>
   );
 };
