@@ -421,7 +421,7 @@ const Home: React.FC = () => {
           </Card>
         </Col>
       </Row>
-      {/* Custom CSS animations   
+      {/* Custom CSS animations   */}
       <style>
         {`
           @keyframes gridMove {
@@ -452,12 +452,12 @@ const Home: React.FC = () => {
             50% { text-shadow: 0 0 24px ${GOLD}; }
             100% { text-shadow: 0 0 10px ${GOLD}; }
           }
-          .ant-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 8px 24px ${GOLD}33;
-          }
+          // .ant-card:hover {
+          //   transform: translateY(-5px);
+          //   box-shadow: 0 8px 24px ${GOLD}33;
+          // }
         `}
-      </style>*/}
+      </style>
     </div>
   );
 };
