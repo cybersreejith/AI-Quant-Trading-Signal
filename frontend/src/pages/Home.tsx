@@ -198,7 +198,7 @@ const Home: React.FC = () => {
                 letterSpacing: 1,
               }}
             >
-              AI Powered Quant Trading Analysis
+              AI Powered Trade Advisor by Chase
             </div>
           </Card>
         </Col>
@@ -224,7 +224,7 @@ const Home: React.FC = () => {
                 onClick={() => navigate("/trading")}
               >
                 <Title level={3} style={{ color: GOLD, marginBottom: 8 }}>
-                  AI Quant Trading Analysis
+                  Chase Quant Trading Analysis
                 </Title>
                 <Paragraph
                   style={{ color: "#fff", textAlign: "center", fontSize: 16 }}
