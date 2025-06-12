@@ -365,7 +365,7 @@ const Trading: React.FC = () => {
                 minWidth: 140,
               }}
             >
-              Start Analyse
+              Start Analysis
             </Button>
           </div>
         </div>

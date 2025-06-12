@@ -282,7 +282,7 @@ const Report: React.FC = () => {
                   radius: "60%",
                   min: -100,
                   max: 100,
-                  splitNumber: 10,
+                  splitNumber: 7,
                   axisLine: {
                     lineStyle: {
                       color: [
@@ -316,7 +316,7 @@ const Report: React.FC = () => {
                   },
                   axisLabel: {
                     color: "inherit",
-                    distance: 40,
+                    distance: 20,
                     fontSize: 12,
                     formatter: function (value: number) {
                       if (value <= -50) return "Negative";
@@ -358,7 +358,7 @@ const Report: React.FC = () => {
                     },
                   },
                   axisLabel: {
-                    distance: 40,
+                    distance: 20,
                     fontSize: 12,
                     formatter: function (value: number) {
                       if (value <= -0.5) return "SELL";

@@ -223,7 +223,7 @@ const Home: React.FC = () => {
                 onClick={() => navigate("/trading")}
               >
                 <Title level={3} style={{ color: GOLD, marginBottom: 8 }}>
-                  AI Quant Trading Analyse
+                  AI Quant Trading Analysis
                 </Title>
                 <Paragraph
                   style={{ color: "#fff", textAlign: "center", fontSize: 16 }}
@@ -243,7 +243,7 @@ const Home: React.FC = () => {
                     borderRadius: 8,
                   }}
                 >
-                  Start Analyse
+                  Start Analysis
                 </Button>
               </Card>
             </Col>
