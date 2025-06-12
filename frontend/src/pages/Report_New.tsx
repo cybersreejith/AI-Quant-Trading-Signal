@@ -343,20 +343,6 @@ const Report: React.FC = () => {
           borderRadius: 12,
         }}
       >
-        {/* <div
-          style={{
-            background: "#fff",
-            borderRadius: 16,
-            boxShadow: "0 4px 24px #e3eafc",
-            padding: "40px 48px",
-            maxWidth: "85vw",
-            minWidth: 420,
-            margin: "60px auto",
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-          }}
-        > */}
         <div
           style={{
             display: "flex",
@@ -418,7 +404,6 @@ const Report: React.FC = () => {
           </span>
         </div>
       </div>
-      // </div>
     );
   }
 
