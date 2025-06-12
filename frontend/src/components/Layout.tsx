@@ -40,8 +40,7 @@ const Layout: React.FC = () => {
           }}
         >
           CHASE
-        </div>
-        <Menu
+        </div>        <Menu
           theme="dark"
           mode="horizontal"
           selectedKeys={[location.pathname]}
@@ -53,8 +52,29 @@ const Layout: React.FC = () => {
             fontSize: 16,
             flex: 1,
             minWidth: 0,
-          }}
-        />
+          }}        />        {/* Investments by text and JP Morgan Logo - Top Right of Navigation */}
+        <div style={{ display: "flex", alignItems: "center", marginLeft: "20px" }}>
+          <span
+            style={{
+              color: "#fff",
+              fontSize: "14px",
+              fontWeight: 500,
+              marginRight: "10px",
+              opacity: 0.9,
+              fontFamily: "Amplitude, sans-serif",
+            }}
+          >
+            Investments by
+          </span>          <img
+            src="/jp-morgan-mozaic-ii-index.png"
+            alt="JP Morgan Logo"
+            style={{
+              height: "100px",
+              width: "auto",
+              opacity: 0.9,
+            }}
+          />
+        </div>
       </Header>
       <Content
         style={{

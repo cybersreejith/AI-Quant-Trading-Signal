@@ -4,6 +4,9 @@ from dotenv import load_dotenv
 # Loading environment variables
 load_dotenv()
 
+# Debug print to check if API key is loaded
+print("DEBUG: OPENAI_API_KEY:", os.getenv('OPENAI_API_KEY'))
+
 # API key
 OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
 
