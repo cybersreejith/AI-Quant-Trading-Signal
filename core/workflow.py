@@ -5,6 +5,7 @@ import pandas as pd
 import logging
 from datetime import datetime, timedelta
 from core.agents.function_call_agent import function_call_agent
+from core.tools.finance_market_sentiment_analyse import analyze_market_sentiment
 from core.tools.strategy_generation import generate_strategy
 from core.tools.backtest import quant_analysis
 import json
@@ -171,7 +172,7 @@ def analyze_market_sentiment_node(state: WorkflowState) -> WorkflowState:
             raise ValueError("Asset code not obtained")
         # Run market sentiment analysis
         task = f"Please perform market sentiment analysis based on the asset code {state['symbol']}"
-        sentiment_analysis = function_call_agent.run(task)
+        sentiment_analysis = analyze_market_sentiment(state['symbol'])
         
         if sentiment_analysis is None:
             logger.error("Market sentiment analysis failed")
