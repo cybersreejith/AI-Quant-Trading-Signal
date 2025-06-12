@@ -20,7 +20,6 @@ const gridBgColors = [
 
 const Home: React.FC = () => {
   const navigate = useNavigate();
-
   return (
     <div
       style={{
@@ -29,8 +28,7 @@ const Home: React.FC = () => {
         background: JPM_GRADIENT,
         position: "relative",
         zIndex: 1,
-      }}
-    >
+      }}    >
       <Row gutter={[32, 32]}>
         <Col span={24}>
           <Card
