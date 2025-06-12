@@ -27,20 +27,25 @@ const Layout: React.FC = () => {
           display: "flex",
           alignItems: "center",
         }}
-      >
-        <div
+      >        <div
           style={{
-            color: "#fff",
-            fontSize: 22,
-            fontWeight: 700,
-            letterSpacing: 1,
             marginRight: 32,
-            fontFamily: "Segoe UI, Arial, sans-serif",
             flex: "none",
+            display: "flex",
+            alignItems: "center",
           }}
         >
-          CHASE
-        </div>        <Menu
+          <img
+            src="/chase-bank-logo-03.png"
+            alt="Chase"
+            style={{
+              height: 150,
+              width: "auto",
+              objectFit: "contain",
+            }}
+          />
+        </div>
+        <Menu
           theme="dark"
           mode="horizontal"
           selectedKeys={[location.pathname]}
