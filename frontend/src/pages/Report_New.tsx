@@ -456,17 +456,6 @@ const Report: React.FC = () => {
             padding: "6px 28px",
           }}
         >
-          {/* <h4
-            style={{
-              color: "#1976d2",
-              fontWeight: 600,
-              fontSize: 26,
-              lineHeight: 1.2,
-            }}
-          >
-            Sentiment / Trading Signal Analysis
-          </h4> */}
-
           <ReactECharts
             option={{
               title: {
@@ -476,9 +465,12 @@ const Report: React.FC = () => {
                 padding: [16, 0, 16, 0],
                 textStyle: {
                   color: "#1976d2",
-                  fontWeight: 500,
+                  fontWeight: 700,
                   fontSize: 24,
                   lineHeight: 1.2,
+                  margin: "0 0 28px 0",
+                  letterSpacing: 1.5,
+                  textAlign: "center",
                 },
               },
               tooltip: {
@@ -615,156 +607,352 @@ const Report: React.FC = () => {
         {/* Strategy Overview */}
         <div
           style={{
-            marginBottom: 24,
+            marginBottom: 32,
             boxShadow: "0 4px 24px #e3eafc",
             background: "#fff",
             borderRadius: 16,
-            padding: 24,
+            padding: "32px 48px",
+            maxWidth: 1000,
+            marginLeft: "auto",
+            marginRight: "auto",
           }}
         >
           <h4
             style={{
-              margin: "0 0 24px 32px",
+              margin: "0 0 28px 0",
               color: "#1976d2",
               fontWeight: 700,
-              fontSize: 22,
+              fontSize: 24,
               letterSpacing: 1,
+              textAlign: "center",
+              lineHeight: 1.2,
             }}
           >
             Strategy Overview
           </h4>
-          <p style={{ margin: "8px 0", color: "#555" }}>
-            <strong>Strategy:</strong>{" "}
-            {finalReport.quant_analysis.strategy_name}
-          </p>
-          <p style={{ margin: "8px 0", color: "#555" }}>
-            <strong>Live Signal:</strong>
-            <span
-              style={{
-                display: "inline-block",
-                marginLeft: 8,
-                padding: "2px 12px",
-                borderRadius: 8,
-                background:
-                  finalReport.quant_analysis.live_signal === "BUY"
-                    ? "#e6f9ed"
-                    : finalReport.quant_analysis.live_signal === "SELL"
-                    ? "#ffeaea"
-                    : "#fffbe6",
-                color:
-                  finalReport.quant_analysis.live_signal === "BUY"
-                    ? "#52c41a"
-                    : finalReport.quant_analysis.live_signal === "SELL"
-                    ? "#ff4d4f"
-                    : "#faad14",
-                fontWeight: 600,
-              }}
-            >
-              {finalReport.quant_analysis.live_signal}
-            </span>
-          </p>
-          <p style={{ margin: "8px 0", color: "#555" }}>
-            <strong>Rating:</strong>
-            <span
-              style={{
-                display: "inline-block",
-                marginLeft: 8,
-                padding: "2px 12px",
-                borderRadius: 8,
-                background:
-                  finalReport.quant_analysis.summary.rating === "Poor"
-                    ? "#ffeaea"
-                    : "#e6f9ed",
-                color:
-                  finalReport.quant_analysis.summary.rating === "Poor"
-                    ? "#ff4d4f"
-                    : "#52c41a",
-                fontWeight: 600,
-              }}
-            >
-              {finalReport.quant_analysis.summary.rating}
-            </span>
-          </p>
-          <p style={{ margin: "8px 0", color: "#555" }}>
-            <strong>Recommendation:</strong>{" "}
-            {finalReport.quant_analysis.summary.recommendation}
-          </p>
+          <table
+            style={{
+              width: "100%",
+              borderCollapse: "separate",
+              borderSpacing: 0,
+              background: "#f8fbff",
+              borderRadius: 12,
+              overflow: "hidden",
+              marginBottom: 24,
+              boxShadow: "0 2px 8px #e3eafc",
+            }}
+          >
+            <thead>
+              <tr>
+                <th
+                  style={{
+                    textAlign: "left",
+                    padding: "14px 18px",
+                    background: "#e6f0fa",
+                    color: "#1976d2",
+                    fontWeight: 700,
+                    fontSize: 16,
+                    letterSpacing: 1,
+                    borderBottom: "1px solid #e3eafc",
+                  }}
+                >
+                  Attribute
+                </th>
+                <th
+                  style={{
+                    textAlign: "right",
+                    padding: "14px 18px",
+                    background: "#e6f0fa",
+                    color: "#1976d2",
+                    fontWeight: 700,
+                    fontSize: 16,
+                    letterSpacing: 1,
+                    borderBottom: "1px solid #e3eafc",
+                  }}
+                >
+                  Value
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {[
+                {
+                  label: "Strategy",
+                  value: finalReport.quant_analysis.strategy_name,
+                },
+                {
+                  label: "Live Signal",
+                  value: (
+                    <span
+                      style={{
+                        display: "inline-block",
+                        padding: "2px 18px",
+                        borderRadius: 8,
+                        background:
+                          finalReport.quant_analysis.live_signal === "BUY"
+                            ? "#e6f9ed"
+                            : finalReport.quant_analysis.live_signal === "SELL"
+                            ? "#ffeaea"
+                            : "#fffbe6",
+                        color:
+                          finalReport.quant_analysis.live_signal === "BUY"
+                            ? "#52c41a"
+                            : finalReport.quant_analysis.live_signal === "SELL"
+                            ? "#ff4d4f"
+                            : "#faad14",
+                        fontWeight: 700,
+                        fontSize: 16,
+                        letterSpacing: 1,
+                      }}
+                    >
+                      {finalReport.quant_analysis.live_signal}
+                    </span>
+                  ),
+                },
+                {
+                  label: "Rating",
+                  value: (
+                    <span
+                      style={{
+                        display: "inline-block",
+                        padding: "2px 18px",
+                        borderRadius: 8,
+                        background:
+                          finalReport.quant_analysis.summary.rating === "Poor"
+                            ? "#ffeaea"
+                            : "#e6f9ed",
+                        color:
+                          finalReport.quant_analysis.summary.rating === "Poor"
+                            ? "#ff4d4f"
+                            : "#52c41a",
+                        fontWeight: 700,
+                        fontSize: 16,
+                        letterSpacing: 1,
+                      }}
+                    >
+                      {finalReport.quant_analysis.summary.rating}
+                    </span>
+                  ),
+                },
+                {
+                  label: "Recommendation",
+                  value: (
+                    <span
+                      style={{
+                        color: "#1976d2",
+                        fontWeight: 600,
+                        fontSize: 16,
+                        textAlign: "right",
+                      }}
+                    >
+                      {finalReport.quant_analysis.summary.recommendation}
+                    </span>
+                  ),
+                },
+              ].map((row, idx) => (
+                <tr
+                  key={row.label}
+                  style={{
+                    background: idx % 2 === 0 ? "#f8fbff" : "#f2f6fb",
+                    transition: "background 0.2s",
+                  }}
+                >
+                  <td
+                    style={{
+                      padding: "12px 18px",
+                      color: "#555",
+                      fontWeight: 600,
+                      minWidth: 140,
+                    }}
+                  >
+                    {row.label}
+                  </td>
+                  <td
+                    style={{
+                      padding: "12px 18px",
+                      textAlign: "right",
+                      color: "#222",
+                      fontWeight: 700,
+                    }}
+                  >
+                    {row.value}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
 
-        <Card
-          title="Quantitative Analysis"
+        {/* Quantitative Analysis */}
+
+        <div
           style={{
+            marginBottom: 32,
             boxShadow: "0 4px 24px #e3eafc",
-            margin: "0 0 24px 32px",
-            color: "#1976d2",
-            fontWeight: 700,
-            fontSize: 22,
-            letterSpacing: 1,
+            background: "#fff",
+            borderRadius: 16,
+            padding: "32px 48px", // more horizontal padding
+            maxWidth: 1000, // match main content width
+            marginLeft: "auto",
+            marginRight: "auto",
           }}
         >
-          <Table
-            columns={[
-              { title: "Metric", dataIndex: "metric" },
-              { title: "Value", dataIndex: "value" },
-            ]}
-            dataSource={[
-              {
-                key: "1",
-                metric: "Total Return",
-                value: finalReport.quant_analysis.key_metrics.total_return,
-              },
-              {
-                key: "2",
-                metric: "Sharpe Ratio",
-                value:
-                  finalReport.quant_analysis.key_metrics.sharpe_ratio.toFixed(
-                    2
-                  ),
-              },
-              {
-                key: "3",
-                metric: "Max Drawdown",
-                value: finalReport.quant_analysis.key_metrics.max_drawdown,
-              },
-              {
-                key: "4",
-                metric: "Win Rate",
-                value: finalReport.quant_analysis.key_metrics.win_rate,
-              },
-              ...(finalReport.quant_analysis.key_metrics.total_trades
-                ? [
-                    {
-                      key: "5",
-                      metric: "Total Trades",
-                      value:
-                        finalReport.quant_analysis.key_metrics.total_trades.toString(),
-                    },
-                  ]
-                : []),
-              ...(finalReport.quant_analysis.key_metrics.avg_trade_duration
-                ? [
-                    {
-                      key: "6",
-                      metric: "Avg Trade Duration",
-                      value:
-                        finalReport.quant_analysis.key_metrics
-                          .avg_trade_duration,
-                    },
-                  ]
-                : []),
-            ]}
-          />
-          <div style={{ marginTop: 16 }}>
-            <Paragraph>
-              <strong>Key Strength:</strong>{" "}
+          <h4
+            style={{
+              margin: "0 0 28px 0",
+              color: "#1976d2",
+              fontWeight: 700,
+              fontSize: 24,
+              letterSpacing: 1,
+              textAlign: "center",
+              lineHeight: 1.2,
+            }}
+          >
+            Quantitative Analysis
+          </h4>
+          <table
+            style={{
+              width: "100%",
+              borderCollapse: "separate",
+              borderSpacing: 0,
+              background: "#f8fbff",
+              borderRadius: 12,
+              overflow: "hidden",
+              marginBottom: 24,
+              boxShadow: "0 2px 8px #e3eafc",
+            }}
+          >
+            <thead>
+              <tr>
+                <th
+                  style={{
+                    textAlign: "left",
+                    padding: "14px 18px",
+                    background: "#e6f0fa",
+                    color: "#1976d2",
+                    fontWeight: 700,
+                    fontSize: 16,
+                    letterSpacing: 1,
+                    borderBottom: "1px solid #e3eafc",
+                  }}
+                >
+                  Metric
+                </th>
+                <th
+                  style={{
+                    textAlign: "right",
+                    padding: "14px 18px",
+                    background: "#e6f0fa",
+                    color: "#1976d2",
+                    fontWeight: 700,
+                    fontSize: 16,
+                    letterSpacing: 1,
+                    borderBottom: "1px solid #e3eafc",
+                  }}
+                >
+                  Value
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {[
+                {
+                  label: "Total Return",
+                  value: finalReport.quant_analysis.key_metrics.total_return,
+                },
+                {
+                  label: "Sharpe Ratio",
+                  value:
+                    finalReport.quant_analysis.key_metrics.sharpe_ratio.toFixed(
+                      2
+                    ),
+                },
+                {
+                  label: "Max Drawdown",
+                  value: finalReport.quant_analysis.key_metrics.max_drawdown,
+                },
+                {
+                  label: "Win Rate",
+                  value: finalReport.quant_analysis.key_metrics.win_rate,
+                },
+                ...(finalReport.quant_analysis.key_metrics.total_trades
+                  ? [
+                      {
+                        label: "Total Trades",
+                        value:
+                          finalReport.quant_analysis.key_metrics.total_trades,
+                      },
+                    ]
+                  : []),
+                ...(finalReport.quant_analysis.key_metrics.avg_trade_duration
+                  ? [
+                      {
+                        label: "Avg Trade Duration",
+                        value:
+                          finalReport.quant_analysis.key_metrics
+                            .avg_trade_duration,
+                      },
+                    ]
+                  : []),
+              ].map((row, idx) => (
+                <tr
+                  key={row.label}
+                  style={{
+                    background: idx % 2 === 0 ? "#f8fbff" : "#f2f6fb",
+                    transition: "background 0.2s",
+                  }}
+                >
+                  <td
+                    style={{
+                      padding: "12px 18px",
+                      color: "#555",
+                      fontWeight: 600,
+                    }}
+                  >
+                    {row.label}
+                  </td>
+                  <td
+                    style={{
+                      padding: "12px 18px",
+                      textAlign: "right",
+                      color: "#222",
+                      fontWeight: 700,
+                    }}
+                  >
+                    {row.value}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+
+          <div
+            style={{
+              marginTop: 8,
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              gap: 16,
+              flexWrap: "wrap",
+            }}
+          >
+            <div style={{ color: "#1976d2", fontWeight: 600, fontSize: 16 }}>
+              <span style={{ color: "#555" }}>Key Strength:</span>{" "}
               {finalReport.quant_analysis.summary.key_strength}
-            </Paragraph>
-            <Paragraph>
-              <strong>Main Weakness:</strong>{" "}
+            </div>
+            <div
+              style={{
+                color: "#ff4d4f",
+                fontWeight: 600,
+                fontSize: 16,
+                textAlign: "right",
+              }}
+            >
+              <span style={{ color: "#555" }}>Main Weakness:</span>{" "}
               {finalReport.quant_analysis.summary.main_weakness}
-            </Paragraph>
+            </div>
           </div>
-        </Card>
+        </div>
 
         {/* Market Sentiment */}
         <div
@@ -773,76 +961,212 @@ const Report: React.FC = () => {
             boxShadow: "0 4px 24px #e3eafc",
             background: "#fff",
             borderRadius: 16,
-            padding: 24,
+            padding: "32px 48px",
+            maxWidth: 1000,
+            marginLeft: "auto",
+            marginRight: "auto",
           }}
         >
-          <h4 style={{ margin: "0 0 16px 0", color: "#1976d2" }}>
+          <h4
+            style={{
+              margin: "0 0 28px 0",
+              color: "#1976d2",
+              fontWeight: 700,
+              fontSize: 24,
+              letterSpacing: 1,
+              textAlign: "center",
+              lineHeight: 1.2,
+            }}
+          >
             Market Sentiment
           </h4>
-          <p style={{ margin: "8px 0", color: "#555" }}>
-            <strong>Overall Sentiment:</strong>
-            <span
-              style={{
-                display: "inline-block",
-                marginLeft: 8,
-                padding: "2px 12px",
-                borderRadius: 8,
-                background:
-                  finalReport.market_sentiment.overall_sentiment === "positive"
-                    ? "#e6f9ed"
-                    : finalReport.market_sentiment.overall_sentiment ===
-                      "negative"
-                    ? "#ffeaea"
-                    : "#fffbe6",
-                color:
-                  finalReport.market_sentiment.overall_sentiment === "positive"
-                    ? "#52c41a"
-                    : finalReport.market_sentiment.overall_sentiment ===
-                      "negative"
-                    ? "#ff4d4f"
-                    : "#faad14",
-                fontWeight: 600,
-              }}
-            >
-              {finalReport.market_sentiment.overall_sentiment}
-            </span>
-          </p>
-          <p style={{ margin: "8px 0", color: "#555" }}>
-            <strong>Sentiment Score:</strong>{" "}
-            {finalReport.market_sentiment.sentiment_score}
-          </p>
-          <p style={{ margin: "8px 0", color: "#555" }}>
-            <strong>Confidence:</strong>{" "}
-            {(finalReport.market_sentiment.confidence * 100).toFixed(1)}%
-          </p>
-          {finalReport.market_sentiment.error && (
-            <p style={{ color: "#ff4d4f", margin: "8px 0" }}>
-              <strong>Note:</strong> {finalReport.market_sentiment.error}
-            </p>
-          )}
+          <table
+            style={{
+              width: "100%",
+              borderCollapse: "separate",
+              borderSpacing: 0,
+              background: "#f8fbff",
+              borderRadius: 12,
+              overflow: "hidden",
+              marginBottom: 16,
+              boxShadow: "0 2px 8px #e3eafc",
+            }}
+          >
+            <thead>
+              <tr>
+                <th
+                  style={{
+                    textAlign: "left",
+                    padding: "14px 18px",
+                    background: "#e6f0fa",
+                    color: "#1976d2",
+                    fontWeight: 700,
+                    fontSize: 16,
+                    letterSpacing: 1,
+                    borderBottom: "1px solid #e3eafc",
+                  }}
+                >
+                  Attribute
+                </th>
+                <th
+                  style={{
+                    textAlign: "right",
+                    padding: "14px 18px",
+                    background: "#e6f0fa",
+                    color: "#1976d2",
+                    fontWeight: 700,
+                    fontSize: 16,
+                    letterSpacing: 1,
+                    borderBottom: "1px solid #e3eafc",
+                  }}
+                >
+                  Value
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {[
+                {
+                  label: "Overall Sentiment",
+                  value: (
+                    <span
+                      style={{
+                        display: "inline-block",
+                        padding: "2px",
+                        borderRadius: 8,
+                        background:
+                          finalReport.market_sentiment.overall_sentiment ===
+                          "positive"
+                            ? "#e6f9ed"
+                            : finalReport.market_sentiment.overall_sentiment ===
+                              "negative"
+                            ? "#ffeaea"
+                            : "#fffbe6",
+                        color:
+                          finalReport.market_sentiment.overall_sentiment ===
+                          "positive"
+                            ? "#52c41a"
+                            : finalReport.market_sentiment.overall_sentiment ===
+                              "negative"
+                            ? "#ff4d4f"
+                            : "#faad14",
+                        fontWeight: 700,
+                        fontSize: 16,
+                        letterSpacing: 1,
+                        textTransform: "capitalize",
+                      }}
+                    >
+                      {finalReport.market_sentiment.overall_sentiment}
+                    </span>
+                  ),
+                },
+                {
+                  label: "Sentiment Score",
+                  value: finalReport.market_sentiment.sentiment_score,
+                },
+                {
+                  label: "Confidence",
+                  value: `${(
+                    finalReport.market_sentiment.confidence * 100
+                  ).toFixed(1)}%`,
+                },
+              ].map((row, idx) => (
+                <tr
+                  key={row.label}
+                  style={{
+                    background: idx % 2 === 0 ? "#f8fbff" : "#f2f6fb",
+                    transition: "background 0.2s",
+                  }}
+                >
+                  <td
+                    style={{
+                      padding: "12px 18px",
+                      color: "#555",
+                      fontWeight: 600,
+                      minWidth: 140,
+                    }}
+                  >
+                    {row.label}
+                  </td>
+                  <td
+                    style={{
+                      padding: "12px 18px",
+                      textAlign: "right",
+                      color: "#222",
+                      fontWeight: 700,
+                    }}
+                  >
+                    {row.value}
+                  </td>
+                </tr>
+              ))}
+              {finalReport.market_sentiment.error && (
+                <tr>
+                  <td
+                    style={{
+                      padding: "12px 18px",
+                      color: "#ff4d4f",
+                      fontWeight: 600,
+                      minWidth: 140,
+                    }}
+                  >
+                    Note
+                  </td>
+                  <td
+                    style={{
+                      padding: "12px 18px",
+                      textAlign: "right",
+                      color: "#ff4d4f",
+                      fontWeight: 700,
+                    }}
+                  >
+                    {finalReport.market_sentiment.error}
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
         </div>
 
         {/* AI Analysis Report */}
         <div
           style={{
-            marginBottom: 24,
+            marginBottom: 32,
             boxShadow: "0 4px 24px #e3eafc",
             background: "#fff",
             borderRadius: 16,
-            padding: 24,
+            padding: "32px 48px",
+            maxWidth: 1000,
+            marginLeft: "auto",
+            marginRight: "auto",
           }}
         >
-          <h4 style={{ margin: "0 0 16px 0", color: "#1976d2" }}>
+          <h4
+            style={{
+              margin: "0 0 28px 0",
+              color: "#1976d2",
+              fontWeight: 700,
+              fontSize: 24,
+              letterSpacing: 1,
+              textAlign: "center",
+              lineHeight: 1.2,
+            }}
+          >
             AI Analysis Report
           </h4>
           <div
             style={{
               whiteSpace: "pre-wrap",
-              lineHeight: "1.6",
-              background: "#f5f5f5",
-              padding: "16px",
-              borderRadius: "6px",
-              border: "1px solid #d9d9d9",
+              lineHeight: "1.7",
+              background: "#f8fbff",
+              padding: "24px 28px",
+              borderRadius: 12,
+              border: "1px solid #e3eafc",
+              color: "#222",
+              fontSize: 17,
+              fontWeight: 500,
+              boxShadow: "0 1px 4px #e3eafc",
+              minHeight: 80,
             }}
           >
             {finalReport.ai_analysis}
