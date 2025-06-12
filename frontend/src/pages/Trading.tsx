@@ -253,10 +253,10 @@ const Trading: React.FC = () => {
                 fontFamily: "Segoe UI, Arial, sans-serif",
                 textAlign: "center",
                 display: "inline-block",
-                color: JPM_BLUE,
+                color: "#1976d2",
               }}
             >
-              JPMorgans AI-Powered Trading Signal
+              J.P.Morgan Financial Advisor Analysis
             </span>
           </div>
         }
@@ -292,9 +292,10 @@ const Trading: React.FC = () => {
               ))}
             </Space>
           </Radio.Group>
-          <Text strong style={{ color: JPM_BLUE }}>
+
+          <Title level={4} style={{ color: JPM_BLUE, marginBottom: 8 }}>
             Asset Code
-          </Text>
+          </Title>
           <Input
             style={{ width: "100%", marginBottom: 16, marginTop: 8 }}
             placeholder="For example: BTC-USD, AAPL, EURUSD=X"
